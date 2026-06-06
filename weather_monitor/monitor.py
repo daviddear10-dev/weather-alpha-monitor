@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import requests
 from tabulate import tabulate
@@ -15,6 +16,8 @@ from tabulate import tabulate
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 HKO_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php"
 LOCAL_TZ = timezone(timedelta(hours=8))
+DEFAULT_TIMEZONE = "Asia/Shanghai"
+HKO_TIMEZONE = "Asia/Hong_Kong"
 
 
 @dataclass(frozen=True)
@@ -22,6 +25,15 @@ class City:
     name: str
     latitude: float
     longitude: float
+    timezone: str
+
+
+DEFAULT_CITIES = [
+    City("深圳", 22.5431, 114.0579, "Asia/Shanghai"),
+    City("香港", 22.3193, 114.1694, "Asia/Hong_Kong"),
+    City("北京", 39.9042, 116.4074, "Asia/Shanghai"),
+]
+DEFAULT_CITIES_PATH = Path(__file__).with_name("cities.json")
 
 
 @dataclass(frozen=True)
@@ -48,19 +60,52 @@ class ComparisonRecord:
     confidence: str
 
 
-CITIES = [
-    City("深圳", 22.5431, 114.0579),
-    City("香港", 22.3193, 114.1694),
-    City("北京", 39.9042, 116.4074),
-]
-
-
 def now_local() -> datetime:
     return datetime.now(LOCAL_TZ)
 
 
-def tomorrow_date() -> str:
-    return (now_local().date() + timedelta(days=1)).isoformat()
+def tomorrow_date_for_timezone(timezone_name: str) -> str:
+    tz = safe_zoneinfo(timezone_name)
+    return (datetime.now(tz).date() + timedelta(days=1)).isoformat()
+
+
+def tomorrow_date_for_city(city: City) -> str:
+    return tomorrow_date_for_timezone(city.timezone)
+
+
+def safe_timezone_name(timezone_name: str) -> str:
+    try:
+        ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError:
+        return DEFAULT_TIMEZONE
+    return timezone_name
+
+
+def safe_zoneinfo(timezone_name: str) -> ZoneInfo:
+    return ZoneInfo(safe_timezone_name(timezone_name))
+
+
+def load_cities(config_path: Path = DEFAULT_CITIES_PATH) -> list[City]:
+    try:
+        payload = json.loads(config_path.read_text(encoding="utf-8"))
+        if not isinstance(payload, list):
+            raise ValueError("cities config must be a list")
+        cities = []
+        for item in payload:
+            if not isinstance(item, dict) or item.get("enabled") is not True:
+                continue
+            name = str(item["name"]).strip()
+            latitude = float(item["latitude"])
+            longitude = float(item["longitude"])
+            timezone_name = safe_timezone_name(str(item.get("timezone", DEFAULT_TIMEZONE)))
+            if not name:
+                continue
+            cities.append(City(name, latitude, longitude, timezone_name))
+        if not cities:
+            raise ValueError("cities config has no enabled cities")
+        return cities
+    except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+        return DEFAULT_CITIES
 
 
 def get_forecast_run_label(current_time: Optional[datetime] = None) -> str:
@@ -82,7 +127,7 @@ def fetch_open_meteo(city: City, fetched_at: str, forecast_run_label: str) -> Fo
         "latitude": city.latitude,
         "longitude": city.longitude,
         "daily": "temperature_2m_max,temperature_2m_min",
-        "timezone": "Asia/Shanghai",
+        "timezone": city.timezone,
         "forecast_days": 2,
     }
     response = requests.get(OPEN_METEO_URL, params=params, timeout=20)
@@ -94,7 +139,7 @@ def fetch_open_meteo(city: City, fetched_at: str, forecast_run_label: str) -> Fo
     max_temps = daily.get("temperature_2m_max", [])
     min_temps = daily.get("temperature_2m_min", [])
 
-    target_date = tomorrow_date()
+    target_date = tomorrow_date_for_city(city)
     try:
         index = dates.index(target_date)
     except ValueError as exc:
@@ -118,7 +163,7 @@ def fetch_hko(fetched_at: str, forecast_run_label: str) -> ForecastRecord:
     response.raise_for_status()
     payload = response.json()
 
-    target_date = tomorrow_date()
+    target_date = tomorrow_date_for_timezone(HKO_TIMEZONE)
     target_compact_date = target_date.replace("-", "")
     forecasts = payload.get("weatherForecast", [])
     forecast = next(
@@ -437,8 +482,10 @@ def collect_forecasts() -> list[ForecastRecord]:
     current_time = now_local()
     fetched_at = current_time.isoformat(timespec="seconds")
     forecast_run_label = get_forecast_run_label(current_time)
-    records = [fetch_open_meteo(city, fetched_at, forecast_run_label) for city in CITIES]
-    records.append(fetch_hko(fetched_at, forecast_run_label))
+    cities = load_cities()
+    records = [fetch_open_meteo(city, fetched_at, forecast_run_label) for city in cities]
+    if any(city.name == "香港" for city in cities):
+        records.append(fetch_hko(fetched_at, forecast_run_label))
     return records
 
 

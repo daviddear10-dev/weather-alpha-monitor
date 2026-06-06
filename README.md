@@ -1,10 +1,10 @@
 # Weather Alpha Monitor
 
-最小可用版天气预报监控工具，用来手动抓取深圳、香港、北京明日最高温和最低温，并保存到 SQLite 数据库。
+最小可用版天气预报监控工具，用来手动抓取配置城市的明日最高温和最低温，并保存到 SQLite 数据库。
 
 ## 功能
 
-- 使用 Open-Meteo API 获取深圳、香港、北京明日最高温和最低温
+- 使用 Open-Meteo API 获取配置城市的明日最高温和最低温
 - 额外使用香港天文台 Open Data API 获取香港明日最高温和最低温
 - 每次运行保存结果到 SQLite
 - 每次运行导出最近 100 条记录到 `docs/weather_data.json`
@@ -36,6 +36,7 @@ weather-alpha-monitor/
 └── weather_monitor/
     ├── __init__.py
     ├── __main__.py
+    ├── cities.json
     └── monitor.py
 ```
 
@@ -73,6 +74,40 @@ python -m weather_monitor --db ./data/weather.sqlite
 - `22:30-23:59`：`night_2300`
 - `06:00-08:00`：`morning_0700`
 - 其他时间：`manual`
+
+## 如何新增城市
+
+城市配置文件位于：
+
+```text
+weather_monitor/cities.json
+```
+
+每个城市格式：
+
+```json
+{
+  "name": "上海",
+  "latitude": 31.2304,
+  "longitude": 121.4737,
+  "timezone": "Asia/Shanghai",
+  "enabled": true
+}
+```
+
+说明：
+
+- `name`：页面和数据库中显示的城市名称
+- `latitude` / `longitude`：城市坐标
+- `timezone`：城市当地时区，例如 `Asia/Shanghai`、`America/New_York`、`Europe/London`
+- `enabled=true`：会抓取该城市
+- `enabled=false`：暂时跳过该城市
+
+Open-Meteo 会使用城市自己的 `timezone` 计算该城市当地的明天日期。比如纽约会按 `America/New_York` 的当地日期取明日预报，不会按北京时间取日期。
+
+如果某个城市缺少 `timezone` 或填写了无效时区，会默认使用 `Asia/Shanghai`。如果 `cities.json` 不存在或格式错误，程序会自动回退到默认城市：深圳、香港、北京，避免自动任务崩溃。
+
+香港天文台数据只会在“香港”启用时额外抓取一次。其他城市只使用 Open-Meteo。
 
 ## GitHub Actions 自动运行
 
