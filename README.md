@@ -41,7 +41,9 @@ weather-alpha-monitor/
     ├── cities.json
     ├── markets_draft.py
     ├── monitor.py
-    └── polymarket_candidates.py
+    ├── polymarket_candidates.py
+    ├── test_nws_official.py
+    └── test_shenzhen_official.py
 ```
 
 ## 安装
@@ -386,11 +388,45 @@ SZ_OPEN_DATA_APP_KEY=你的appKey python -m weather_monitor.test_shenzhen_offici
 
 如果请求失败或字段不匹配，脚本只会打印错误，不影响现有天气监控程序。
 
+## NOAA/NWS 美国城市官方源测试
+
+NOAA/NWS 官方天气源仍处于独立测试阶段，暂未接入 `python -m weather_monitor` 主采集流程。
+
+测试脚本针对美国三个城市：
+
+- 纽约 (40.7128, -74.0060)，时区 `America/New_York`
+- 洛杉矶 (34.0522, -118.2437)，时区 `America/Los_Angeles`
+- 迈阿密 (25.7617, -80.1918)，时区 `America/New_York`
+
+运行命令：
+
+```bash
+python -m weather_monitor.test_nws_official
+```
+
+脚本流程：
+
+1. 调用 `https://api.weather.gov/points/{lat},{lon}` 获取网格点元数据
+2. 从返回的 `properties.forecast` 获取每日预报 URL
+3. 请求每日预报，按 `startTime` 解析每个 period 的当地日期
+4. 筛选城市当地明天日期的白天/夜晚时段
+5. NWS 默认返回华氏度 (°F)，自动转换为摄氏度 `C = (F - 32) * 5 / 9`
+6. 取当天所有时段的温度最低/最高值，组装成 `ForecastRecord`
+7. 只打印结果，不写入 SQLite，不接入主采集流程
+8. 如果请求失败或字段不匹配，只打印清楚错误，不让程序崩溃
+
+参考页面：
+
+- NWS API 文档: `https://www.weather.gov/documentation/services-web-api`
+- 网格点示例: `https://api.weather.gov/points/40.7128,-74.0060`
+
+
 ## 数据源
 
 - Open-Meteo: `https://api.open-meteo.com/v1/forecast`
 - 香港天文台: `https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=sc`
 - 深圳市政府数据开放平台: `https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00900269`，独立测试中
+- 美国 NOAA/NWS: `https://api.weather.gov`，独立测试中（纽约、洛杉矶、迈阿密）
 
 ## 备注
 
