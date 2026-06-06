@@ -352,10 +352,45 @@ sqlite3 weather_forecasts.sqlite
 select * from weather_forecasts order by id desc limit 20;
 ```
 
+## 深圳官方源测试
+
+深圳官方天气源仍处于独立测试阶段，暂未接入 `python -m weather_monitor` 主采集流程。
+
+测试脚本：
+
+```bash
+python -m weather_monitor.test_shenzhen_official
+```
+
+脚本会尝试：
+
+- 读取深圳市政府数据开放平台接口文档
+- 尝试调用深圳市气象局相关天气预报接口
+- 打印原始 JSON 的关键字段
+- 尝试解析深圳当地明天日期、最低温、最高温、数据更新时间
+- 如果解析成功，转换成 `ForecastRecord` 格式并打印
+
+参考页面：
+
+```text
+https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00900269
+```
+
+注意：该平台正式 API 通常需要订阅后的 `appKey`。如果已有 appKey，可以这样测试：
+
+```bash
+SZ_OPEN_DATA_APP_KEY=你的appKey python -m weather_monitor.test_shenzhen_official
+```
+
+如果没有设置 `SZ_OPEN_DATA_APP_KEY`，脚本会跳过正式 API，只尝试预览接口。
+
+如果请求失败或字段不匹配，脚本只会打印错误，不影响现有天气监控程序。
+
 ## 数据源
 
 - Open-Meteo: `https://api.open-meteo.com/v1/forecast`
 - 香港天文台: `https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=sc`
+- 深圳市政府数据开放平台: `https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00900269`，独立测试中
 
 ## 备注
 
