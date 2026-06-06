@@ -7,6 +7,7 @@
 - 使用 Open-Meteo API 获取深圳、香港、北京明日最高温和最低温
 - 额外使用香港天文台 Open Data API 获取香港明日最高温和最低温
 - 每次运行保存结果到 SQLite
+- 每次运行导出最近 100 条记录到 `docs/weather_data.json`
 - 每次抓取会根据北京时间自动标记批次 `forecast_run_label`
 - 每次运行输出一张表，包含：
   - 抓取时间
@@ -25,6 +26,9 @@ weather-alpha-monitor/
 ├── README.md
 ├── requirements.txt
 ├── weather_forecasts.sqlite
+├── docs/
+│   ├── index.html
+│   └── weather_data.json
 ├── .github/
 │   └── workflows/
 │       └── weather-monitor.yml
@@ -94,11 +98,49 @@ python -m weather_monitor
 
 运行完成后，如果 `weather_forecasts.sqlite` 有变化，workflow 会自动提交并推送回仓库；如果没有变化，会正常结束，不会报错。
 
+同时 workflow 会提交：
+
+- `weather_forecasts.sqlite`
+- `docs/weather_data.json`
+
 也可以在 GitHub 页面手动触发：
 
 ```text
 Actions -> Weather Monitor -> Run workflow
 ```
+
+## GitHub Pages 可视化页面
+
+静态页面文件位于：
+
+```text
+docs/index.html
+```
+
+数据文件位于：
+
+```text
+docs/weather_data.json
+```
+
+页面会读取 `weather_data.json` 并展示：
+
+- 最新记录表格
+- 按城市筛选
+- 按数据源筛选
+- 明日最高温折线图
+- 明日最低温折线图
+- 不同批次对比
+
+在 GitHub 仓库开启 Pages：
+
+```text
+Settings -> Pages -> Build and deployment -> Deploy from a branch
+Branch: main
+Folder: /docs
+```
+
+保存后，GitHub Pages 会发布 `docs/index.html`。每次 GitHub Actions 自动运行并提交新的 `docs/weather_data.json` 后，页面数据会随仓库更新。
 
 ## 查询最近 20 条记录
 

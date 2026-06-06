@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sqlite3
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
@@ -259,6 +260,28 @@ def load_recent_records(db_path: Path, limit: int = 20) -> list[ForecastRecord]:
     ]
 
 
+def export_weather_data(db_path: Path, output_path: Path, limit: int = 100) -> None:
+    records = load_recent_records(db_path, limit=limit)
+    payload = [
+        {
+            "captured_at": record.fetched_at,
+            "forecast_run_label": record.forecast_run_label,
+            "city": record.city,
+            "source": record.source,
+            "forecast_date": record.forecast_date,
+            "min_temp": record.temp_min,
+            "max_temp": record.temp_max,
+            "update_time": record.data_update_time,
+        }
+        for record in records
+    ]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+
+
 def load_comparison_records(db_path: Path) -> list[ComparisonRecord]:
     with sqlite3.connect(db_path) as conn:
         rows = conn.execute(
@@ -442,6 +465,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     db_path = Path(args.db).expanduser().resolve()
+    export_path = Path("docs/weather_data.json").resolve()
     init_db(db_path)
     if args.show:
         records = load_recent_records(db_path)
@@ -454,5 +478,7 @@ def main() -> None:
 
     records = collect_forecasts()
     save_records(db_path, records)
+    export_weather_data(db_path, export_path)
     print_table(records)
     print(f"\nSaved {len(records)} rows to {db_path}")
+    print(f"Exported latest weather data to {export_path}")

@@ -1,0 +1,518 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weather Alpha Monitor</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1020;
+      --panel: #151b2e;
+      --panel-2: #1d263d;
+      --text: #edf2ff;
+      --muted: #9aa8c7;
+      --line: #2b3858;
+      --accent: #42d392;
+      --accent-2: #7aa2ff;
+      --warn: #ffbf69;
+      --hot: #ff6b6b;
+      --shadow: 0 18px 55px rgba(0, 0, 0, 0.35);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(66, 211, 146, 0.15), transparent 28rem),
+        radial-gradient(circle at 90% 10%, rgba(122, 162, 255, 0.16), transparent 26rem),
+        var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .page {
+      width: min(1240px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0 48px;
+    }
+
+    header {
+      display: grid;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(28px, 4vw, 48px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+
+    .stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .charts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 16px;
+    }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)), var(--panel);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+
+    .stat {
+      padding: 18px;
+      min-height: 104px;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .stat .value {
+      margin-top: 10px;
+      font-size: 26px;
+      font-weight: 760;
+    }
+
+    .stat .note {
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: grid;
+      gap: 7px;
+      min-width: 170px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    select {
+      width: 100%;
+      height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 0 12px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .section {
+      padding: 18px;
+    }
+
+    .charts .section {
+      min-height: 430px;
+    }
+
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: baseline;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 880px;
+      font-size: 13px;
+    }
+
+    th,
+    td {
+      padding: 11px 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    th {
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.035);
+      font-weight: 650;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(122, 162, 255, 0.16);
+      color: #cbd8ff;
+      font-size: 12px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 330px !important;
+    }
+
+    .empty {
+      padding: 28px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    @media (max-width: 920px) {
+      .stats,
+      .charts {
+        grid-template-columns: 1fr;
+      }
+
+      .page {
+        width: min(100% - 20px, 1240px);
+        padding-top: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div>
+        <h1>Weather Alpha Monitor</h1>
+        <p class="subtitle">深圳、香港、北京明日最高/最低温监控。数据来自 Open-Meteo 和香港天文台，页面由 GitHub Pages 静态展示。</p>
+      </div>
+      <div class="grid stats">
+        <article class="card stat">
+          <div class="label">最新抓取</div>
+          <div class="value" id="latestCaptured">-</div>
+          <div class="note" id="latestBatch">批次 -</div>
+        </article>
+        <article class="card stat">
+          <div class="label">记录数量</div>
+          <div class="value" id="recordCount">0</div>
+          <div class="note">最近 100 条导出数据</div>
+        </article>
+        <article class="card stat">
+          <div class="label">城市</div>
+          <div class="value" id="cityCount">0</div>
+          <div class="note">当前筛选范围</div>
+        </article>
+        <article class="card stat">
+          <div class="label">数据源</div>
+          <div class="value" id="sourceCount">0</div>
+          <div class="note">当前筛选范围</div>
+        </article>
+      </div>
+    </header>
+
+    <section class="card toolbar">
+      <label>
+        城市
+        <select id="cityFilter">
+          <option value="">全部城市</option>
+        </select>
+      </label>
+      <label>
+        数据源
+        <select id="sourceFilter">
+          <option value="">全部数据源</option>
+        </select>
+      </label>
+    </section>
+
+    <section class="grid charts">
+      <article class="card section">
+        <div class="section-head">
+          <h2>明日最高温</h2>
+          <span class="hint">按抓取时间排序</span>
+        </div>
+        <canvas id="maxChart"></canvas>
+      </article>
+      <article class="card section">
+        <div class="section-head">
+          <h2>明日最低温</h2>
+          <span class="hint">按抓取时间排序</span>
+        </div>
+        <canvas id="minChart"></canvas>
+      </article>
+    </section>
+
+    <section class="card section" style="margin-top: 16px;">
+      <div class="section-head">
+        <h2>不同批次对比</h2>
+        <span class="hint">按批次和城市汇总平均温度</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>批次</th>
+              <th>城市</th>
+              <th>记录数</th>
+              <th>平均最低温</th>
+              <th>平均最高温</th>
+              <th>数据源</th>
+            </tr>
+          </thead>
+          <tbody id="batchTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card section" style="margin-top: 16px;">
+      <div class="section-head">
+        <h2>最新记录</h2>
+        <span class="hint">按抓取时间倒序</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>抓取时间</th>
+              <th>批次</th>
+              <th>城市</th>
+              <th>数据源</th>
+              <th>预报日期</th>
+              <th>最低温</th>
+              <th>最高温</th>
+              <th>更新时间</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const state = {
+      data: [],
+      maxChart: null,
+      minChart: null
+    };
+
+    const cityFilter = document.querySelector("#cityFilter");
+    const sourceFilter = document.querySelector("#sourceFilter");
+
+    fetch("weather_data.json", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("weather_data.json load failed");
+        return response.json();
+      })
+      .then((data) => {
+        state.data = data;
+        setupFilters(data);
+        render();
+      })
+      .catch(() => {
+        document.querySelector("#recordsTable").innerHTML = `<tr><td colspan="8"><div class="empty">暂无数据，请先运行 weather_monitor 生成 weather_data.json。</div></td></tr>`;
+      });
+
+    cityFilter.addEventListener("change", render);
+    sourceFilter.addEventListener("change", render);
+
+    function setupFilters(data) {
+      unique(data.map((item) => item.city)).forEach((city) => {
+        cityFilter.append(new Option(city, city));
+      });
+      unique(data.map((item) => item.source)).forEach((source) => {
+        sourceFilter.append(new Option(source, source));
+      });
+    }
+
+    function render() {
+      const filtered = state.data.filter((item) => {
+        return (!cityFilter.value || item.city === cityFilter.value)
+          && (!sourceFilter.value || item.source === sourceFilter.value);
+      });
+      renderStats(filtered);
+      renderRecords(filtered);
+      renderBatchTable(filtered);
+      renderCharts(filtered);
+    }
+
+    function renderStats(data) {
+      const latest = data[0];
+      document.querySelector("#latestCaptured").textContent = latest ? compactDateTime(latest.captured_at) : "-";
+      document.querySelector("#latestBatch").textContent = latest ? `批次 ${latest.forecast_run_label}` : "批次 -";
+      document.querySelector("#recordCount").textContent = data.length;
+      document.querySelector("#cityCount").textContent = unique(data.map((item) => item.city)).length;
+      document.querySelector("#sourceCount").textContent = unique(data.map((item) => item.source)).length;
+    }
+
+    function renderRecords(data) {
+      const rows = data.slice(0, 50).map((item) => `
+        <tr>
+          <td>${escapeHtml(item.captured_at)}</td>
+          <td><span class="tag">${escapeHtml(item.forecast_run_label)}</span></td>
+          <td>${escapeHtml(item.city)}</td>
+          <td>${escapeHtml(item.source)}</td>
+          <td>${escapeHtml(item.forecast_date)}</td>
+          <td>${formatTemp(item.min_temp)}</td>
+          <td>${formatTemp(item.max_temp)}</td>
+          <td>${escapeHtml(item.update_time)}</td>
+        </tr>
+      `);
+      document.querySelector("#recordsTable").innerHTML = rows.join("") || `<tr><td colspan="8"><div class="empty">当前筛选没有记录。</div></td></tr>`;
+    }
+
+    function renderBatchTable(data) {
+      const groups = new Map();
+      data.forEach((item) => {
+        const key = `${item.forecast_run_label}__${item.city}`;
+        const existing = groups.get(key) || {
+          label: item.forecast_run_label,
+          city: item.city,
+          minTemps: [],
+          maxTemps: [],
+          sources: new Set()
+        };
+        existing.minTemps.push(Number(item.min_temp));
+        existing.maxTemps.push(Number(item.max_temp));
+        existing.sources.add(item.source);
+        groups.set(key, existing);
+      });
+
+      const rows = Array.from(groups.values()).map((group) => `
+        <tr>
+          <td><span class="tag">${escapeHtml(group.label)}</span></td>
+          <td>${escapeHtml(group.city)}</td>
+          <td>${group.minTemps.length}</td>
+          <td>${formatTemp(avg(group.minTemps))}</td>
+          <td>${formatTemp(avg(group.maxTemps))}</td>
+          <td>${escapeHtml(Array.from(group.sources).join("、"))}</td>
+        </tr>
+      `);
+      document.querySelector("#batchTable").innerHTML = rows.join("") || `<tr><td colspan="6"><div class="empty">当前筛选没有批次数据。</div></td></tr>`;
+    }
+
+    function renderCharts(data) {
+      const ordered = [...data].sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
+      const labels = ordered.map((item) => `${compactDateTime(item.captured_at)} ${item.city} ${item.source}`);
+      const maxValues = ordered.map((item) => item.max_temp);
+      const minValues = ordered.map((item) => item.min_temp);
+      state.maxChart = drawLineChart(state.maxChart, "maxChart", labels, maxValues, "最高温", "#ff6b6b");
+      state.minChart = drawLineChart(state.minChart, "minChart", labels, minValues, "最低温", "#42d392");
+    }
+
+    function drawLineChart(existingChart, canvasId, labels, values, label, color) {
+      if (existingChart) existingChart.destroy();
+      return new Chart(document.querySelector(`#${canvasId}`), {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label,
+            data: values,
+            borderColor: color,
+            backgroundColor: `${color}33`,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.28,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: "#edf2ff" } },
+            tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${formatTemp(context.parsed.y)}` } }
+          },
+          scales: {
+            x: {
+              ticks: { color: "#9aa8c7", maxRotation: 45, minRotation: 0 },
+              grid: { color: "rgba(255,255,255,0.06)" }
+            },
+            y: {
+              ticks: { color: "#9aa8c7", callback: (value) => `${value}℃` },
+              grid: { color: "rgba(255,255,255,0.06)" }
+            }
+          }
+        }
+      });
+    }
+
+    function unique(values) {
+      return Array.from(new Set(values.filter(Boolean))).sort();
+    }
+
+    function avg(values) {
+      if (!values.length) return 0;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    }
+
+    function formatTemp(value) {
+      const number = Number(value);
+      return `${Number.isInteger(number) ? number : number.toFixed(1)}℃`;
+    }
+
+    function compactDateTime(value) {
+      if (!value) return "-";
+      return value.replace("T", " ").replace("+08:00", "");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
