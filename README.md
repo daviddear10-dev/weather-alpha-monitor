@@ -123,6 +123,7 @@ Open-Meteo 会使用城市自己的 `timezone` 计算该城市当地的明天日
 
 ```bash
 python -m weather_monitor
+python -m weather_monitor.polymarket_candidates
 ```
 
 定时运行时间：
@@ -134,12 +135,13 @@ python -m weather_monitor
 | 23:00 | 15:00 | `night_2300` |
 | 07:00 | 前一天 23:00 | `morning_0700` |
 
-运行完成后，如果 `weather_forecasts.sqlite` 有变化，workflow 会自动提交并推送回仓库；如果没有变化，会正常结束，不会报错。
+运行完成后，如果天气数据、SQLite 数据库或 Polymarket 候选市场有变化，workflow 会自动提交并推送回仓库；如果没有变化，会正常结束，不会报错。
 
 同时 workflow 会提交：
 
 - `weather_forecasts.sqlite`
 - `docs/weather_data.json`
+- `docs/polymarket_candidates.json`
 
 也可以在 GitHub 页面手动触发：
 
@@ -179,7 +181,7 @@ Branch: main
 Folder: /docs
 ```
 
-保存后，GitHub Pages 会发布 `docs/index.html`。每次 GitHub Actions 自动运行并提交新的 `docs/weather_data.json` 后，页面数据会随仓库更新。
+保存后，GitHub Pages 会发布 `docs/index.html`。每次 GitHub Actions 自动运行并提交新的 `docs/weather_data.json` 或 `docs/polymarket_candidates.json` 后，页面数据会随仓库更新。
 
 ## Polymarket 决策建议
 

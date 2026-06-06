@@ -40,14 +40,17 @@ jobs:
       - name: Run weather monitor
         run: python -m weather_monitor
 
+      - name: Run Polymarket candidate finder
+        run: python -m weather_monitor.polymarket_candidates
+
       - name: Commit updated weather data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add weather_forecasts.sqlite docs/weather_data.json
+          git add weather_forecasts.sqlite docs/weather_data.json docs/polymarket_candidates.json
           if git diff --cached --quiet; then
             echo "No weather data changes to commit."
           else
-            git commit -m "Update weather forecast data"
+            git commit -m "Update weather and market candidate data"
             git push
           fi
