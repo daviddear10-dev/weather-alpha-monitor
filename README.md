@@ -29,6 +29,7 @@ weather-alpha-monitor/
 ├── docs/
 │   ├── index.html
 │   ├── markets.json
+│   ├── polymarket_candidates.json
 │   └── weather_data.json
 ├── .github/
 │   └── workflows/
@@ -37,7 +38,8 @@ weather-alpha-monitor/
     ├── __init__.py
     ├── __main__.py
     ├── cities.json
-    └── monitor.py
+    ├── monitor.py
+    └── polymarket_candidates.py
 ```
 
 ## 安装
@@ -235,6 +237,34 @@ docs/markets.json
 ```text
 请先配置 docs/markets.json。
 ```
+
+## Polymarket 候选市场抓取
+
+可以从 Polymarket Gamma API 抓取 weather / temperature 相关候选市场：
+
+```bash
+python -m weather_monitor.polymarket_candidates
+```
+
+输出文件：
+
+```text
+docs/polymarket_candidates.json
+```
+
+这个文件只用于辅助发现候选市场，不会自动覆盖 `docs/markets.json`。候选市场需要人工确认 `forecast_date`、`condition`、`threshold`、`yes_price`、城市和结算规则后，再手动写入 `docs/markets.json`。
+
+抓取逻辑：
+
+- 使用 `https://gamma-api.polymarket.com/events`
+- 只请求 active 且未关闭的事件
+- 筛选文本中包含 `weather`、`temperature`、`high temperature`、`highest temperature`、`max temperature` 的事件/市场
+- 再按 `weather_monitor/cities.json` 里的城市名和英文别名匹配城市
+- 如果标题或问题里能识别 `30°C`、`30℃`、`86°F`、`86 degrees` 这类盘口，会附加温度盘口字段
+- 会尝试从标题、问题和 slug 中解析 `forecast_date`，支持 `on June 6`、`on Jun 6`、`June 6, 2026`、`highest-temperature-in-hong-kong-on-june-6-2026`
+- 会根据 `or below`、`or lower`、`at or below` 判断 `condition <=`，根据 `or higher`、`or above`、`at or above` 判断 `condition >=`；没有方向短语时暂按 `=` 处理，并输出 `condition_reason`
+
+如果 API 请求失败，命令会打印错误并输出空数组，避免程序崩溃。
 
 ## 查询最近 20 条记录
 
