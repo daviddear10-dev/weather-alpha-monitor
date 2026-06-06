@@ -28,6 +28,7 @@ weather-alpha-monitor/
 ├── weather_forecasts.sqlite
 ├── docs/
 │   ├── index.html
+│   ├── markets.json
 │   └── weather_data.json
 ├── .github/
 │   └── workflows/
@@ -131,6 +132,7 @@ docs/weather_data.json
 - 明日最高温折线图
 - 明日最低温折线图
 - 不同批次对比
+- Polymarket 决策建议表
 
 在 GitHub 仓库开启 Pages：
 
@@ -141,6 +143,63 @@ Folder: /docs
 ```
 
 保存后，GitHub Pages 会发布 `docs/index.html`。每次 GitHub Actions 自动运行并提交新的 `docs/weather_data.json` 后，页面数据会随仓库更新。
+
+## Polymarket 决策建议
+
+页面会读取盘口配置：
+
+```text
+docs/markets.json
+```
+
+示例：
+
+```json
+[
+  {
+    "city": "香港",
+    "forecast_date": "2026-06-07",
+    "metric": "max_temp",
+    "market_question": "香港 2026-06-07 最高温是否达到 30℃？",
+    "threshold": 30,
+    "condition": ">=",
+    "yes_price": 0.48
+  }
+]
+```
+
+字段说明：
+
+- `city`：城市，需要和 `weather_data.json` 中的城市一致
+- `forecast_date`：预报日期
+- `metric`：`max_temp` 或 `min_temp`
+- `market_question`：市场问题
+- `threshold`：盘口温度线
+- `condition`：目前支持 `>=`、`>`、`<=`、`<`
+- `yes_price`：YES 当前价格，手动填写
+
+决策逻辑：
+
+- 页面按 `city + forecast_date` 找到最新预测，并按数据源去重
+- 多数据源时计算最低温范围、最高温范围、平均最低温、平均最高温、数据源数量和数据源分歧
+- `metric=max_temp` 使用平均最高温判断，`metric=min_temp` 使用平均最低温判断
+- 单数据源时固定显示暂不交易，不直接给 YES/NO 方向；理由为“只有一个数据源，缺少交叉验证，不给交易方向。”
+- 数据源分歧 `>= 3℃`：暂不交易，低置信度
+- 只有数据源数量 `>= 2` 时，预测值高于盘口至少 `1.5℃`：偏 YES
+- 只有数据源数量 `>= 2` 时，预测值低于盘口至少 `1.5℃`：偏 NO
+- 距离盘口小于 `1.5℃`：暂不交易
+
+仓位建议：
+
+- 高置信度：小仓
+- 中置信度：观察 / 极小仓
+- 低置信度：0，不交易
+
+如果 `docs/markets.json` 不存在或为空，页面会显示：
+
+```text
+请先配置 docs/markets.json。
+```
 
 ## 查询最近 20 条记录
 

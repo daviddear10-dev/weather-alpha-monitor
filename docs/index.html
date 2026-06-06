@@ -203,6 +203,28 @@
       font-size: 12px;
     }
 
+    .tag.yes {
+      background: rgba(66, 211, 146, 0.17);
+      color: #aaf0ce;
+    }
+
+    .tag.no {
+      background: rgba(255, 107, 107, 0.17);
+      color: #ffc1c1;
+    }
+
+    .tag.neutral {
+      background: rgba(255, 191, 105, 0.17);
+      color: #ffe0ad;
+    }
+
+    .reason {
+      max-width: 360px;
+      white-space: normal;
+      line-height: 1.55;
+      color: #cdd7ee;
+    }
+
     canvas {
       width: 100%;
       height: 330px !important;
@@ -314,6 +336,34 @@
 
     <section class="card section" style="margin-top: 16px;">
       <div class="section-head">
+        <h2>Polymarket 决策建议</h2>
+        <span class="hint">基于 markets.json 和最新多源预测</span>
+      </div>
+      <div class="table-wrap">
+        <table style="min-width: 1280px;">
+          <thead>
+            <tr>
+              <th>城市</th>
+              <th>预报日期</th>
+              <th>市场问题</th>
+              <th>市场线</th>
+              <th>当前预测</th>
+              <th>数据源数量</th>
+              <th>数据源分歧</th>
+              <th>YES 价格</th>
+              <th>建议方向</th>
+              <th>置信度</th>
+              <th>建议仓位</th>
+              <th>理由</th>
+            </tr>
+          </thead>
+          <tbody id="marketTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="card section" style="margin-top: 16px;">
+      <div class="section-head">
         <h2>最新记录</h2>
         <span class="hint">按抓取时间倒序</span>
       </div>
@@ -340,6 +390,8 @@
   <script>
     const state = {
       data: [],
+      markets: [],
+      marketsLoaded: false,
       maxChart: null,
       minChart: null
     };
@@ -347,18 +399,25 @@
     const cityFilter = document.querySelector("#cityFilter");
     const sourceFilter = document.querySelector("#sourceFilter");
 
-    fetch("weather_data.json", { cache: "no-store" })
-      .then((response) => {
+    Promise.all([
+      fetch("weather_data.json", { cache: "no-store" }).then((response) => {
         if (!response.ok) throw new Error("weather_data.json load failed");
         return response.json();
-      })
-      .then((data) => {
-        state.data = data;
-        setupFilters(data);
+      }),
+      fetch("markets.json", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : [])
+        .catch(() => [])
+    ])
+      .then(([weatherData, markets]) => {
+        state.data = Array.isArray(weatherData) ? weatherData : [];
+        state.markets = Array.isArray(markets) ? markets : [];
+        state.marketsLoaded = state.markets.length > 0;
+        setupFilters(state.data);
         render();
       })
       .catch(() => {
         document.querySelector("#recordsTable").innerHTML = `<tr><td colspan="8"><div class="empty">暂无数据，请先运行 weather_monitor 生成 weather_data.json。</div></td></tr>`;
+        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
       });
 
     cityFilter.addEventListener("change", render);
@@ -381,6 +440,7 @@
       renderStats(filtered);
       renderRecords(filtered);
       renderBatchTable(filtered);
+      renderMarketTable();
       renderCharts(filtered);
     }
 
@@ -439,6 +499,144 @@
       document.querySelector("#batchTable").innerHTML = rows.join("") || `<tr><td colspan="6"><div class="empty">当前筛选没有批次数据。</div></td></tr>`;
     }
 
+    function renderMarketTable() {
+      if (!state.marketsLoaded) {
+        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
+        return;
+      }
+
+      const rows = state.markets.map((market) => {
+        const prediction = buildPredictionSummary(market.city, market.forecast_date);
+        const decision = buildMarketDecision(market, prediction);
+        return `
+          <tr>
+            <td>${escapeHtml(market.city)}</td>
+            <td>${escapeHtml(market.forecast_date)}</td>
+            <td>${escapeHtml(market.market_question)}</td>
+            <td>${escapeHtml(formatMarketLine(market))}</td>
+            <td>${escapeHtml(decision.currentPrediction)}</td>
+            <td>${decision.sourceCount}</td>
+            <td>${escapeHtml(decision.sourceSpread)}</td>
+            <td>${formatPrice(market.yes_price)}</td>
+            <td><span class="tag ${decision.directionClass}">${escapeHtml(decision.direction)}</span></td>
+            <td><span class="tag ${decision.confidenceClass}">${escapeHtml(decision.confidence)}</span></td>
+            <td>${escapeHtml(decision.position)}</td>
+            <td><div class="reason">${escapeHtml(decision.reason)}</div></td>
+          </tr>
+        `;
+      });
+      document.querySelector("#marketTable").innerHTML = rows.join("") || `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
+    }
+
+    function buildPredictionSummary(city, forecastDate) {
+      const bySource = new Map();
+      state.data
+        .filter((item) => item.city === city && item.forecast_date === forecastDate)
+        .forEach((item) => {
+          const existing = bySource.get(item.source);
+          if (!existing || new Date(item.captured_at) > new Date(existing.captured_at)) {
+            bySource.set(item.source, item);
+          }
+        });
+
+      const records = Array.from(bySource.values());
+      const minTemps = records.map((item) => Number(item.min_temp)).filter(Number.isFinite);
+      const maxTemps = records.map((item) => Number(item.max_temp)).filter(Number.isFinite);
+      const minSpread = spread(minTemps);
+      const maxSpread = spread(maxTemps);
+      return {
+        records,
+        sourceCount: records.length,
+        predictedMinRange: formatRange(minTemps),
+        predictedMaxRange: formatRange(maxTemps),
+        averageMinTemp: avg(minTemps),
+        averageMaxTemp: avg(maxTemps),
+        minSpread,
+        maxSpread,
+        sourceSpread: Math.max(minSpread, maxSpread)
+      };
+    }
+
+    function buildMarketDecision(market, prediction) {
+      if (!prediction.sourceCount) {
+        return {
+          currentPrediction: "无匹配预测",
+          sourceCount: 0,
+          sourceSpread: "-",
+          direction: "暂不交易",
+          directionClass: "neutral",
+          confidence: "低",
+          confidenceClass: "neutral",
+          position: "0，不交易",
+          reason: "weather_data.json 中没有找到对应城市和预报日期的预测数据。"
+        };
+      }
+
+      const useMax = market.metric === "max_temp";
+      const predictedValue = useMax ? prediction.averageMaxTemp : prediction.averageMinTemp;
+      const metricSpread = useMax ? prediction.maxSpread : prediction.minSpread;
+      const threshold = Number(market.threshold);
+      const distance = Math.abs(predictedValue - threshold);
+      const metricName = useMax ? "最高温" : "最低温";
+      if (prediction.sourceCount < 2) {
+        return {
+          currentPrediction: `${metricName}均值 ${formatTemp(predictedValue)}；最低温 ${prediction.predictedMinRange}，最高温 ${prediction.predictedMaxRange}`,
+          sourceCount: prediction.sourceCount,
+          sourceSpread: formatTemp(prediction.sourceSpread),
+          direction: "暂不交易",
+          directionClass: "neutral",
+          confidence: "低",
+          confidenceClass: "no",
+          position: "0，不交易",
+          reason: "只有一个数据源，缺少交叉验证，不给交易方向。"
+        };
+      }
+
+      const directionSign = [">=", ">"].includes(market.condition) ? 1 : -1;
+      const edge = (predictedValue - threshold) * directionSign;
+      let direction = "暂不交易";
+      if (prediction.sourceSpread < 3 && edge >= 1.5) direction = "偏 YES";
+      if (prediction.sourceSpread < 3 && edge <= -1.5) direction = "偏 NO";
+
+      let confidence = "低";
+      if (prediction.sourceCount >= 2 && prediction.sourceSpread <= 1 && distance >= 2 && direction !== "暂不交易") {
+        confidence = "高";
+      } else if (prediction.sourceCount >= 2 && prediction.sourceSpread <= 2 && distance >= 1.5 && direction !== "暂不交易") {
+        confidence = "中";
+      }
+      if (prediction.sourceSpread >= 3 || distance < 1.5) {
+        confidence = "低";
+      }
+
+      let position = "0，不交易";
+      if (confidence === "高") position = "小仓";
+      if (confidence === "中") position = "观察 / 极小仓";
+
+      const spreadText = `${metricName}分歧 ${formatTemp(metricSpread)}，总体分歧 ${formatTemp(prediction.sourceSpread)}`;
+      const reason = buildDecisionReason(direction, confidence, predictedValue, threshold, distance, spreadText, prediction.sourceCount);
+      return {
+        currentPrediction: `${metricName}均值 ${formatTemp(predictedValue)}；最低温 ${prediction.predictedMinRange}，最高温 ${prediction.predictedMaxRange}`,
+        sourceCount: prediction.sourceCount,
+        sourceSpread: formatTemp(prediction.sourceSpread),
+        direction,
+        directionClass: direction.includes("YES") ? "yes" : direction.includes("NO") ? "no" : "neutral",
+        confidence,
+        confidenceClass: confidence === "高" ? "yes" : confidence === "中" ? "neutral" : "no",
+        position,
+        reason
+      };
+    }
+
+    function buildDecisionReason(direction, confidence, predictedValue, threshold, distance, spreadText, sourceCount) {
+      if (confidence === "低" && direction === "暂不交易") {
+        return `预测 ${formatTemp(predictedValue)} 接近盘口 ${formatTemp(threshold)}，距离 ${formatTemp(distance)}；${spreadText}。`;
+      }
+      if (confidence === "低") {
+        return `${spreadText}，预测 ${formatTemp(predictedValue)}，距离盘口 ${formatTemp(distance)}，不满足开仓条件。`;
+      }
+      return `${spreadText}，预测 ${formatTemp(predictedValue)}，距离盘口 ${formatTemp(distance)}，建议${direction}。`;
+    }
+
     function renderCharts(data) {
       const ordered = [...data].sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
       const labels = ordered.map((item) => `${compactDateTime(item.captured_at)} ${item.city} ${item.source}`);
@@ -495,9 +693,39 @@
       return values.reduce((sum, value) => sum + value, 0) / values.length;
     }
 
+    function spread(values) {
+      if (!values.length) return 0;
+      return Math.max(...values) - Math.min(...values);
+    }
+
+    function formatRange(values) {
+      if (!values.length) return "-";
+      const low = Math.min(...values);
+      const high = Math.max(...values);
+      if (low === high) return formatTemp(low);
+      return `${formatNumber(low)}-${formatTemp(high)}`;
+    }
+
+    function formatMarketLine(market) {
+      return `${market.metric === "min_temp" ? "最低温" : "最高温"} ${market.condition || ">="} ${formatTemp(market.threshold)}`;
+    }
+
+    function formatPrice(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "-";
+      return number.toFixed(2);
+    }
+
     function formatTemp(value) {
       const number = Number(value);
-      return `${Number.isInteger(number) ? number : number.toFixed(1)}℃`;
+      if (!Number.isFinite(number)) return "-";
+      return `${formatNumber(number)}℃`;
+    }
+
+    function formatNumber(value) {
+      const number = Number(value);
+      if (!Number.isFinite(number)) return "-";
+      return Number.isInteger(number) ? String(number) : number.toFixed(1);
     }
 
     function compactDateTime(value) {
