@@ -1,0 +1,53 @@
+name: Weather Monitor
+
+on:
+  schedule:
+    # Beijing 18:00
+    - cron: "0 10 * * *"
+    # Beijing 20:30
+    - cron: "30 12 * * *"
+    # Beijing 23:00
+    - cron: "0 15 * * *"
+    # Beijing 07:00 next day
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: weather-monitor-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run-weather-monitor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run weather monitor
+        run: python -m weather_monitor
+
+      - name: Commit updated SQLite database
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add weather_forecasts.sqlite
+          if git diff --cached --quiet; then
+            echo "No database changes to commit."
+          else
+            git commit -m "Update weather forecast database"
+            git push
+          fi
