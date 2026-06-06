@@ -29,6 +29,7 @@ weather-alpha-monitor/
 ├── docs/
 │   ├── index.html
 │   ├── markets.json
+│   ├── markets_draft.json
 │   ├── polymarket_candidates.json
 │   └── weather_data.json
 ├── .github/
@@ -38,6 +39,7 @@ weather-alpha-monitor/
     ├── __init__.py
     ├── __main__.py
     ├── cities.json
+    ├── markets_draft.py
     ├── monitor.py
     └── polymarket_candidates.py
 ```
@@ -267,6 +269,31 @@ docs/polymarket_candidates.json
 - 会根据 `or below`、`or lower`、`at or below` 判断 `condition <=`，根据 `or higher`、`or above`、`at or above` 判断 `condition >=`；没有方向短语时暂按 `=` 处理，并输出 `condition_reason`
 
 如果 API 请求失败，命令会打印错误并输出空数组，避免程序崩溃。
+
+## Polymarket markets 草稿生成
+
+可以根据候选市场和已有天气数据日期生成 `markets.json` 草稿：
+
+```bash
+python -m weather_monitor.markets_draft
+```
+
+输入文件：
+
+```text
+docs/polymarket_candidates.json
+docs/weather_data.json
+```
+
+输出文件：
+
+```text
+docs/markets_draft.json
+```
+
+`markets_draft.json` 是从候选市场和天气数据日期匹配后生成的草稿，不会覆盖 `docs/markets.json`。它只保留城市和预报日期已经存在于 `weather_data.json`、盘口线可解析、市场仍 active 且未 closed 的候选市场。
+
+如果同一个 `city + forecast_date + threshold + condition` 有重复，脚本会保留 `volume24hr` 更高的一条。生成后仍需人工确认 `forecast_date`、`condition`、`threshold`、`yes_price` 和结算规则，再复制到 `docs/markets.json`。
 
 ## 查询最近 20 条记录
 
