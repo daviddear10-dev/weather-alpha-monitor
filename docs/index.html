@@ -218,8 +218,32 @@
       color: #ffe0ad;
     }
 
-    .reason {
-      max-width: 360px;
+    .market-table {
+      min-width: 1540px;
+      table-layout: fixed;
+    }
+
+    .market-table th,
+    .market-table td {
+      vertical-align: top;
+    }
+
+    .market-table .wrap-cell {
+      white-space: normal;
+      line-height: 1.55;
+    }
+
+    .market-table .question {
+      min-width: 260px;
+    }
+
+    .market-table .prediction {
+      min-width: 300px;
+      color: #dce6ff;
+    }
+
+    .market-table .reason {
+      min-width: 380px;
       white-space: normal;
       line-height: 1.55;
       color: #cdd7ee;
@@ -340,20 +364,34 @@
         <span class="hint">基于 markets.json 和最新多源预测</span>
       </div>
       <div class="table-wrap">
-        <table style="min-width: 1280px;">
+        <table class="market-table">
+          <colgroup>
+            <col style="width: 70px;">
+            <col style="width: 108px;">
+            <col style="width: 96px;">
+            <col style="width: 78px;">
+            <col style="width: 116px;">
+            <col style="width: 76px;">
+            <col style="width: 116px;">
+            <col style="width: 300px;">
+            <col style="width: 88px;">
+            <col style="width: 96px;">
+            <col style="width: 260px;">
+            <col style="width: 420px;">
+          </colgroup>
           <thead>
             <tr>
               <th>城市</th>
               <th>预报日期</th>
-              <th>市场问题</th>
+              <th>建议方向</th>
+              <th>置信度</th>
+              <th>建议仓位</th>
+              <th>YES 价格</th>
               <th>市场线</th>
               <th>当前预测</th>
               <th>数据源数量</th>
               <th>数据源分歧</th>
-              <th>YES 价格</th>
-              <th>建议方向</th>
-              <th>置信度</th>
-              <th>建议仓位</th>
+              <th>市场问题</th>
               <th>理由</th>
             </tr>
           </thead>
@@ -512,15 +550,15 @@
           <tr>
             <td>${escapeHtml(market.city)}</td>
             <td>${escapeHtml(market.forecast_date)}</td>
-            <td>${escapeHtml(market.market_question)}</td>
-            <td>${escapeHtml(formatMarketLine(market))}</td>
-            <td>${escapeHtml(decision.currentPrediction)}</td>
-            <td>${decision.sourceCount}</td>
-            <td>${escapeHtml(decision.sourceSpread)}</td>
-            <td>${formatPrice(market.yes_price)}</td>
             <td><span class="tag ${decision.directionClass}">${escapeHtml(decision.direction)}</span></td>
             <td><span class="tag ${decision.confidenceClass}">${escapeHtml(decision.confidence)}</span></td>
             <td>${escapeHtml(decision.position)}</td>
+            <td>${formatPrice(market.yes_price)}</td>
+            <td>${escapeHtml(formatMarketLine(market))}</td>
+            <td><div class="prediction wrap-cell">${escapeHtml(decision.currentPrediction)}</div></td>
+            <td>${decision.sourceCount}</td>
+            <td>${escapeHtml(decision.sourceSpread)}</td>
+            <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
             <td><div class="reason">${escapeHtml(decision.reason)}</div></td>
           </tr>
         `;
