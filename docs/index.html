@@ -373,6 +373,7 @@
             <col style="width: 116px;">
             <col style="width: 76px;">
             <col style="width: 116px;">
+            <col style="width: 110px;">
             <col style="width: 300px;">
             <col style="width: 88px;">
             <col style="width: 96px;">
@@ -388,6 +389,7 @@
               <th>建议仓位</th>
               <th>YES 价格</th>
               <th>市场线</th>
+              <th>距离盘口</th>
               <th>当前预测</th>
               <th>数据源数量</th>
               <th>数据源分歧</th>
@@ -539,7 +541,7 @@
 
     function renderMarketTable() {
       if (!state.marketsLoaded) {
-        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
+        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="13"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
         return;
       }
 
@@ -555,6 +557,7 @@
             <td>${escapeHtml(decision.position)}</td>
             <td>${formatPrice(market.yes_price)}</td>
             <td>${escapeHtml(formatMarketLine(market))}</td>
+            <td>${escapeHtml(decision.distanceToLine)}${decision.tooClose ? ` <span class="tag neutral">太接近</span>` : ""}</td>
             <td><div class="prediction wrap-cell">${escapeHtml(decision.currentPrediction)}</div></td>
             <td>${decision.sourceCount}</td>
             <td>${escapeHtml(decision.sourceSpread)}</td>
@@ -563,7 +566,7 @@
           </tr>
         `;
       });
-      document.querySelector("#marketTable").innerHTML = rows.join("") || `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
+      document.querySelector("#marketTable").innerHTML = rows.join("") || `<tr><td colspan="13"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
     }
 
     function buildPredictionSummary(city, forecastDate) {
@@ -601,6 +604,8 @@
           currentPrediction: "无匹配预测",
           sourceCount: 0,
           sourceSpread: "-",
+          distanceToLine: "-",
+          tooClose: false,
           direction: "暂不交易",
           directionClass: "neutral",
           confidence: "低",
@@ -621,6 +626,8 @@
           currentPrediction: `${metricName}均值 ${formatTemp(predictedValue)}；最低温 ${prediction.predictedMinRange}，最高温 ${prediction.predictedMaxRange}`,
           sourceCount: prediction.sourceCount,
           sourceSpread: formatTemp(prediction.sourceSpread),
+          distanceToLine: formatTemp(distance),
+          tooClose: distance < 1.5,
           direction: "暂不交易",
           directionClass: "neutral",
           confidence: "低",
@@ -656,6 +663,8 @@
         currentPrediction: `${metricName}均值 ${formatTemp(predictedValue)}；最低温 ${prediction.predictedMinRange}，最高温 ${prediction.predictedMaxRange}`,
         sourceCount: prediction.sourceCount,
         sourceSpread: formatTemp(prediction.sourceSpread),
+        distanceToLine: formatTemp(distance),
+        tooClose: distance < 1.5,
         direction,
         directionClass: direction.includes("YES") ? "yes" : direction.includes("NO") ? "no" : "neutral",
         confidence,
