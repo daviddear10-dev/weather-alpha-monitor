@@ -278,7 +278,7 @@
     <header>
       <div>
         <h1>Weather Alpha Monitor</h1>
-        <p class="subtitle">多城市明日最高/最低温监控。数据来自 Open-Meteo、香港天文台、NOAA/NWS、NEA/MSS，页面由 GitHub Pages 静态展示。</p>
+        <p class="subtitle">多城市最高/最低温预测监控。数据来自 Open-Meteo、香港天文台、NOAA/NWS、NEA/MSS，页面由 GitHub Pages 静态展示。</p>
       </div>
       <div class="grid stats">
         <article class="card stat">
@@ -349,7 +349,7 @@
     <section class="grid charts">
       <article class="card section">
         <div class="section-head">
-          <h2>明日最高温</h2>
+          <h2>目标日期最高温预测</h2>
           <span class="hint" id="maxChartHint">按抓取时间排序</span>
         </div>
         <div class="hint" id="maxChartNote" style="margin-bottom:8px;color:var(--muted);font-size:12px;"></div>
@@ -357,7 +357,7 @@
       </article>
       <article class="card section">
         <div class="section-head">
-          <h2>明日最低温</h2>
+          <h2>目标日期最低温预测</h2>
           <span class="hint" id="minChartHint">按抓取时间排序</span>
         </div>
         <div class="hint" id="minChartNote" style="margin-bottom:8px;color:var(--muted);font-size:12px;"></div>
@@ -647,7 +647,7 @@
           <td>${escapeHtml(item.city)}</td>
           <td>${escapeHtml(item.source)}</td>
           <td>${escapeHtml(item.forecast_date)}</td>
-          <td>${formatTemp(item.min_temp)}</td>
+          <td>${item.min_temp != null ? formatTemp(item.min_temp) : 'N/A'}</td>
           <td>${formatTemp(item.max_temp)}</td>
           <td>${escapeHtml(item.update_time)}</td>
         </tr>
@@ -666,7 +666,8 @@
           maxTemps: [],
           sources: new Set()
         };
-        existing.minTemps.push(Number(item.min_temp));
+        const mt = Number(item.min_temp);
+        if (Number.isFinite(mt)) existing.minTemps.push(mt);
         existing.maxTemps.push(Number(item.max_temp));
         existing.sources.add(item.source);
         groups.set(key, existing);
@@ -850,7 +851,10 @@
         });
 
       const records = Array.from(bySource.values());
-      const minTemps = records.map((item) => Number(item.min_temp)).filter(Number.isFinite);
+      const minTemps = records
+        .filter((item) => item.min_temp != null)
+        .map((item) => Number(item.min_temp))
+        .filter(Number.isFinite);
       const maxTemps = records.map((item) => Number(item.max_temp)).filter(Number.isFinite);
       const minSpread = spread(minTemps);
       const maxSpread = spread(maxTemps);
@@ -979,7 +983,14 @@
       data.forEach((item) => {
         const key = `${item.city} · ${item.source}`;
         const entry = seriesMap.get(key) || { city: item.city, source: item.source, points: [] };
-        entry.points.push({ x: item.captured_at, y_max: item.max_temp, y_min: item.min_temp, city: item.city, source: item.source, forecast_date: item.forecast_date });
+        entry.points.push({
+          x: item.captured_at,
+          y_max: item.max_temp,
+          y_min: item.min_temp != null ? item.min_temp : NaN,
+          city: item.city,
+          source: item.source,
+          forecast_date: item.forecast_date
+        });
         seriesMap.set(key, entry);
       });
 

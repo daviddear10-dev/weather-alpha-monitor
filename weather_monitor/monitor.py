@@ -45,7 +45,7 @@ class ForecastRecord:
     city: str
     source: str
     forecast_date: str
-    temp_min: float
+    temp_min: float | None
     temp_max: float
     data_update_time: str
 
@@ -69,6 +69,12 @@ def now_local() -> datetime:
 def tomorrow_date_for_timezone(timezone_name: str) -> str:
     tz = safe_zoneinfo(timezone_name)
     return (datetime.now(tz).date() + timedelta(days=1)).isoformat()
+
+
+
+def today_date_for_timezone(timezone_name: str) -> str:
+    tz = safe_zoneinfo(timezone_name)
+    return datetime.now(tz).date().isoformat()
 
 
 def tomorrow_date_for_city(city: City) -> str:
@@ -124,7 +130,8 @@ def get_forecast_run_label(current_time: Optional[datetime] = None) -> str:
     return "manual"
 
 
-def fetch_open_meteo(city: City, fetched_at: str, forecast_run_label: str) -> ForecastRecord:
+
+def fetch_open_meteo(city: City, fetched_at: str, forecast_run_label: str) -> list[ForecastRecord]:
     params = {
         "latitude": city.latitude,
         "longitude": city.longitude,
@@ -141,22 +148,64 @@ def fetch_open_meteo(city: City, fetched_at: str, forecast_run_label: str) -> Fo
     max_temps = daily.get("temperature_2m_max", [])
     min_temps = daily.get("temperature_2m_min", [])
 
-    target_date = tomorrow_date_for_city(city)
+    def _make_record(target_date: str) -> ForecastRecord:
+        try:
+            index = dates.index(target_date)
+        except ValueError as exc:
+            raise ValueError(
+                f"Open-Meteo response for {city.name} has no forecast for {target_date}"
+            ) from exc
+        return ForecastRecord(
+            fetched_at=fetched_at,
+            forecast_run_label=forecast_run_label,
+            city=city.name,
+            source="Open-Meteo",
+            forecast_date=target_date,
+            temp_min=float(min_temps[index]),
+            temp_max=float(max_temps[index]),
+            data_update_time=payload.get("generationtime_ms") is not None and fetched_at or "",
+        )
+
+    tomorrow = tomorrow_date_for_city(city)
+    records = [_make_record(tomorrow)]
+
+    # For Hong Kong, also produce today's forecast
+    if city.name == "香港":
+        today = today_date_for_timezone(city.timezone)
+        if today != tomorrow:
+            try:
+                records.append(_make_record(today))
+            except ValueError:
+                pass  # today may not be in the 2-day window if we're late UTC
+
+    return records
+
+def _fetch_hko_today_from_cache(fetched_at: str, forecast_run_label: str) -> ForecastRecord | None:
+    """Read today's HKO forecast from cache if available and valid."""
     try:
-        index = dates.index(target_date)
-    except ValueError as exc:
-        raise ValueError(f"Open-Meteo response for {city.name} has no forecast for {target_date}") from exc
+        from .hong_kong_forecast_cache import load_forecast_cache  # noqa: E402
+        cache_entry = load_forecast_cache()
+    except Exception:
+        return None
+
+    if cache_entry is None:
+        return None
+
+    today_hk = today_date_for_timezone(HKO_TIMEZONE)
+    if cache_entry.forecast_date != today_hk:
+        return None
 
     return ForecastRecord(
         fetched_at=fetched_at,
         forecast_run_label=forecast_run_label,
-        city=city.name,
-        source="Open-Meteo",
-        forecast_date=target_date,
-        temp_min=float(min_temps[index]),
-        temp_max=float(max_temps[index]),
-        data_update_time=payload.get("generationtime_ms") is not None and fetched_at or "",
+        city="香港",
+        source="香港天文台-今日预测",
+        forecast_date=today_hk,
+        temp_min=None,  # cache has no min temp
+        temp_max=cache_entry.forecast_high,
+        data_update_time=cache_entry.update_time or fetched_at,
     )
+
 
 
 def fetch_hko(fetched_at: str, forecast_run_label: str) -> ForecastRecord:
@@ -299,7 +348,7 @@ def load_recent_records(db_path: Path, limit: int = 20) -> list[ForecastRecord]:
             city=row[2],
             source=row[3],
             forecast_date=row[4],
-            temp_min=float(row[5]),
+            temp_min=float(row[5]) if row[5] is not None else None,
             temp_max=float(row[6]),
             data_update_time=row[7],
         )
@@ -412,13 +461,17 @@ def classify_confidence(source_count: int, temp_min_diff: float, temp_max_diff: 
     return "中等"
 
 
-def format_temperature_range(low: float, high: float) -> str:
+def format_temperature_range(low: float | None, high: float) -> str:
+    if low is None:
+        return format_temperature(high)
     if low == high:
         return format_temperature(low)
     return f"{format_number(low)}-{format_number(high)}℃"
 
 
-def format_temperature(value: float) -> str:
+def format_temperature(value: float | None) -> str:
+    if value is None:
+        return "N/A"
     return f"{format_number(value)}℃"
 
 
@@ -436,7 +489,7 @@ def print_table(records: list[ForecastRecord], *, tomorrow_labels: bool = True) 
             record.city,
             record.source,
             record.forecast_date,
-            f"{record.temp_min:.1f}",
+            f"{record.temp_min:.1f}" if record.temp_min is not None else "N/A",
             f"{record.temp_max:.1f}",
             record.data_update_time,
         ]
@@ -448,8 +501,8 @@ def print_table(records: list[ForecastRecord], *, tomorrow_labels: bool = True) 
         "城市",
         "数据源",
         "预报日期",
-        "明日最低温" if tomorrow_labels else "最低温",
-        "明日最高温" if tomorrow_labels else "最高温",
+        "目标日期最低温" if tomorrow_labels else "最低温",
+        "目标日期最高温" if tomorrow_labels else "最高温",
         "数据更新时间" if tomorrow_labels else "更新时间",
     ]
     print(tabulate(rows, headers=headers, tablefmt="github"))
@@ -487,9 +540,17 @@ def collect_forecasts() -> list[ForecastRecord]:
     fetched_at = current_time.isoformat(timespec="seconds")
     forecast_run_label = get_forecast_run_label(current_time)
     cities = load_cities()
-    records = [fetch_open_meteo(city, fetched_at, forecast_run_label) for city in cities]
+    records = []
+    for city in cities:
+        om_records = fetch_open_meteo(city, fetched_at, forecast_run_label)
+        records.extend(om_records)
     if any(city.name == "香港" for city in cities):
         records.append(fetch_hko(fetched_at, forecast_run_label))
+        hko_today = _fetch_hko_today_from_cache(fetched_at, forecast_run_label)
+        if hko_today is not None:
+            records.append(hko_today)
+        else:
+            print("香港天文台今日预测缓存不可用，跳过")
     for city in cities:
         if city.name in NWS_US_CITIES:
             try:
