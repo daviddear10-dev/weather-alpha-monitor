@@ -45,7 +45,8 @@ weather-alpha-monitor/
     ├── nws_official.py
     ├── polymarket_candidates.py
     ├── test_nws_official.py
-    └── test_shenzhen_official.py
+    ├── test_shenzhen_official.py
+    └── test_singapore_nea.py
 ```
 
 ## 安装
@@ -452,12 +453,41 @@ python -m weather_monitor.test_nws_official
 - 网格点示例: `https://api.weather.gov/points/40.7128,-74.0060`
 
 
+## 新加坡 NEA/MSS 官方源独立测试
+
+新加坡官方天气源仍处于独立测试阶段，暂未接入 `python -m weather_monitor` 主采集流程。
+
+数据来源：新加坡政府 data.gov.sg 的 4-day Weather Forecast API。
+
+测试脚本：
+
+```bash
+python -m weather_monitor.test_singapore_nea
+```
+
+脚本流程：
+
+1. 调用 `https://api.data.gov.sg/v1/environment/4-day-weather-forecast`
+2. 从返回的 `items[0].forecasts` 中解析 4 天预报
+3. 使用 `Asia/Singapore` 时区计算新加坡当地明天日期
+4. 从匹配日期的 forecast 中提取 `temperature.low` 和 `temperature.high`
+5. 温度默认摄氏度，无需转换
+6. 组装 `ForecastRecord`，source 固定为 `NEA/MSS`
+7. 只打印结果，不写入 SQLite，不接入主采集流程
+8. 请求失败或字段缺失时打印错误并返回 None
+
+参考页面：
+
+- Singapore 4-day Weather Forecast: `https://beta.data.gov.sg/collections/3075/datasets/d_f131f6e343bf8168e4057a04c4326a0a/view`
+
+
 ## 数据源
 
 - Open-Meteo: `https://api.open-meteo.com/v1/forecast`
 - 香港天文台: `https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=sc`
 - 深圳市政府数据开放平台: `https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00900269`，独立测试中
 - 美国 NOAA/NWS: `https://api.weather.gov`，已接入主流程（纽约、洛杉矶、迈阿密第二数据源）
+- 新加坡 NEA/MSS: `https://api.data.gov.sg/v1/environment/4-day-weather-forecast`，独立测试中
 
 ## 备注
 
