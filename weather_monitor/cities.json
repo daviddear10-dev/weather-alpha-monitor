@@ -1,37 +1,9 @@
 [
   {
-    "name": "深圳",
-    "latitude": 22.5431,
-    "longitude": 114.0579,
-    "timezone": "Asia/Shanghai",
-    "enabled": true
-  },
-  {
     "name": "香港",
     "latitude": 22.3193,
     "longitude": 114.1694,
     "timezone": "Asia/Hong_Kong",
-    "enabled": true
-  },
-  {
-    "name": "北京",
-    "latitude": 39.9042,
-    "longitude": 116.4074,
-    "timezone": "Asia/Shanghai",
-    "enabled": true
-  },
-  {
-    "name": "上海",
-    "latitude": 31.2304,
-    "longitude": 121.4737,
-    "timezone": "Asia/Shanghai",
-    "enabled": true
-  },
-  {
-    "name": "新加坡",
-    "latitude": 1.3521,
-    "longitude": 103.8198,
-    "timezone": "Asia/Singapore",
     "enabled": true
   },
   {
@@ -42,31 +14,10 @@
     "enabled": true
   },
   {
-    "name": "伦敦",
-    "latitude": 51.5072,
-    "longitude": -0.1276,
-    "timezone": "Europe/London",
-    "enabled": true
-  },
-  {
-    "name": "洛杉矶",
-    "latitude": 34.0522,
-    "longitude": -118.2437,
-    "timezone": "America/Los_Angeles",
-    "enabled": true
-  },
-  {
-    "name": "迈阿密",
-    "latitude": 25.7617,
-    "longitude": -80.1918,
-    "timezone": "America/New_York",
-    "enabled": true
-  },
-  {
-    "name": "多伦多",
-    "latitude": 43.6532,
-    "longitude": -79.3832,
-    "timezone": "America/Toronto",
+    "name": "新加坡",
+    "latitude": 1.3521,
+    "longitude": 103.8198,
+    "timezone": "Asia/Singapore",
     "enabled": true
   }
 ]
