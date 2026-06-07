@@ -504,6 +504,16 @@ def collect_forecasts() -> list[ForecastRecord]:
                     print(f"NOAA/NWS 获取失败 ({city.name})，仅使用 Open-Meteo 数据")
             except Exception as exc:
                 print(f"NOAA/NWS 异常 ({city.name}): {exc}，仅使用 Open-Meteo 数据")
+    if any(city.name == "新加坡" for city in cities):
+        try:
+            from .singapore_nea import fetch_singapore_nea_forecast  # noqa: E402
+            nea_record = fetch_singapore_nea_forecast()
+            if nea_record is not None:
+                records.append(nea_record)
+            else:
+                print("NEA/MSS 获取失败（新加坡），仅使用 Open-Meteo 数据")
+        except Exception as exc:
+            print(f"NEA/MSS 异常（新加坡）: {exc}，仅使用 Open-Meteo 数据")
     return records
 
 

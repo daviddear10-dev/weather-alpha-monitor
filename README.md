@@ -7,6 +7,7 @@
 - 使用 Open-Meteo API 获取配置城市的明日最高温和最低温
 - 额外使用香港天文台 Open Data API 获取香港明日最高温和最低温
 - 额外使用 NOAA/NWS API 获取纽约、洛杉矶、迈阿密明日最高温和最低温
+- 额外使用 NEA/MSS API 获取新加坡明日最高温和最低温
 - 每次运行保存结果到 SQLite
 - 每次运行导出最近 100 条记录到 `docs/weather_data.json`
 - 每次抓取会根据北京时间自动标记批次 `forecast_run_label`
@@ -456,7 +457,7 @@ python -m weather_monitor.test_nws_official
 
 ## 新加坡 NEA/MSS 官方源
 
-新加坡官方天气源已提取为独立模块 `weather_monitor/singapore_nea.py`，提供可复用函数 `fetch_singapore_nea_forecast()`，暂未接入 `python -m weather_monitor` 主采集流程。
+新加坡官方天气源已接入 `python -m weather_monitor` 主采集流程。运行主程序时，新加坡会在 Open-Meteo 之外额外抓取 NEA/MSS 数据作为第二数据源。NEA/MSS 获取失败不影响 Open-Meteo 数据和其他城市。独立模块 `weather_monitor/singapore_nea.py` 提供可复用函数 `fetch_singapore_nea_forecast()`。
 
 数据来源：新加坡政府 data.gov.sg 的 4-day Weather Forecast API。
 
@@ -488,7 +489,7 @@ python -m weather_monitor.test_singapore_nea
 - 香港天文台: `https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=sc`
 - 深圳市政府数据开放平台: `https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00900269`，独立测试中
 - 美国 NOAA/NWS: `https://api.weather.gov`，已接入主流程（纽约、洛杉矶、迈阿密第二数据源）
-- 新加坡 NEA/MSS: `https://api.data.gov.sg/v1/environment/4-day-weather-forecast`，独立测试中
+- 新加坡 NEA/MSS: `https://api.data.gov.sg/v1/environment/4-day-weather-forecast`，已接入主流程（新加坡第二数据源）
 
 ## 备注
 
