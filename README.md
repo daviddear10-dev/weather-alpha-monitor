@@ -44,6 +44,7 @@ weather-alpha-monitor/
     ├── monitor.py
     ├── nws_official.py
     ├── polymarket_candidates.py
+    ├── singapore_nea.py
     ├── test_nws_official.py
     ├── test_shenzhen_official.py
     └── test_singapore_nea.py
@@ -453,9 +454,9 @@ python -m weather_monitor.test_nws_official
 - 网格点示例: `https://api.weather.gov/points/40.7128,-74.0060`
 
 
-## 新加坡 NEA/MSS 官方源独立测试
+## 新加坡 NEA/MSS 官方源
 
-新加坡官方天气源仍处于独立测试阶段，暂未接入 `python -m weather_monitor` 主采集流程。
+新加坡官方天气源已提取为独立模块 `weather_monitor/singapore_nea.py`，提供可复用函数 `fetch_singapore_nea_forecast()`，暂未接入 `python -m weather_monitor` 主采集流程。
 
 数据来源：新加坡政府 data.gov.sg 的 4-day Weather Forecast API。
 
