@@ -169,15 +169,20 @@ docs/index.html
 docs/weather_data.json
 ```
 
-页面会读取 `weather_data.json` 并展示：
+页面会读取 `weather_data.json`、`markets.json`、`markets_draft.json`、`polymarket_candidates.json` 并展示：
 
+- 统计摘要（天气城市数、正式/草稿/候选市场数量、数据覆盖情况）
 - 最新记录表格
 - 按城市筛选
 - 按数据源筛选
 - 明日最高温折线图
 - 明日最低温折线图
 - 不同批次对比
-- Polymarket 决策建议表
+- Polymarket 决策建议表（仅基于 `markets.json`，作为正式交易参考）
+- Polymarket 草稿市场表（`markets_draft.json`，日期已匹配天气数据的候选市场草稿）
+- Polymarket 候选市场表（`polymarket_candidates.json`，全部候选市场含日期匹配状态）
+
+正式交易建议只基于 `markets.json`。`markets_draft.json` 和 `polymarket_candidates.json` 仅用于辅助筛选和人工确认，不作为交易建议。
 
 在 GitHub 仓库开启 Pages：
 
