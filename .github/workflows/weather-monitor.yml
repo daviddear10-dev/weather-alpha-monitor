@@ -16,7 +16,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: weather-monitor-${{ github.ref }}
+  group: repository-data-writer-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -43,14 +43,28 @@ jobs:
       - name: Run Polymarket candidate finder
         run: python -m weather_monitor.polymarket_candidates
 
-      - name: Commit updated weather data
+      - name: Commit updated data
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add weather_forecasts.sqlite docs/weather_data.json docs/polymarket_candidates.json
+
+          git add docs/weather_data.json docs/polymarket_candidates.json
+
           if git diff --cached --quiet; then
-            echo "No weather data changes to commit."
-          else
-            git commit -m "Update weather and market candidate data"
-            git push
+            echo "No data changes to commit."
+            exit 0
           fi
+
+          git commit -m "Update weather and market candidate data"
+
+          for attempt in 1 2 3; do
+            if git pull --rebase && git push; then
+              echo "Push succeeded on attempt $attempt"
+              exit 0
+            fi
+            echo "Push attempt $attempt failed, retrying in $((attempt * 5))s..."
+            sleep $((attempt * 5))
+          done
+
+          echo "Failed to push after 3 attempts"
+          exit 1

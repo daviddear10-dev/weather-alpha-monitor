@@ -11,7 +11,7 @@ on:
     - cron: "30 3 * * *"
 
 concurrency:
-  group: capture-hong-kong-forecast
+  group: repository-data-writer-${{ github.ref }}
   cancel-in-progress: false
 
 permissions:

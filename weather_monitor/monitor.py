@@ -356,23 +356,87 @@ def load_recent_records(db_path: Path, limit: int = 20) -> list[ForecastRecord]:
     ]
 
 
-def export_weather_data(db_path: Path, output_path: Path, limit: int = 100) -> None:
-    records = load_recent_records(db_path, limit=limit)
+def _parse_captured_at_ts(captured_at: str) -> float:
+    """Parse captured_at ISO string to a numeric timestamp for sorting.
+    Handles timezone offsets like +08:00 or Z."""
+    try:
+        dt = datetime.fromisoformat(captured_at)
+        return dt.timestamp()
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def _record_key(record: dict) -> tuple:
+    """Stable dedup key for a weather record dict."""
+    return (
+        record.get("city", ""),
+        record.get("source", ""),
+        record.get("forecast_date", ""),
+        record.get("captured_at", ""),
+        record.get("forecast_run_label", ""),
+    )
+
+
+def export_weather_data(
+    new_records: list[ForecastRecord],
+    output_path: Path,
+    max_records: int = 100,
+    db_path: Path | None = None,
+) -> None:
+    """Export weather data JSON, merging new records with existing history.
+
+    - Reads existing docs/weather_data.json if present
+    - Merges new_records in ForecastRecord form
+    - Deduplicates on (city, source, forecast_date, captured_at, forecast_run_label)
+    - Sorts by captured_at descending (real time, not string sort)
+    - Keeps at most max_records entries
+    - Filters to currently enabled cities only
+    """
     enabled_city_names = {city.name for city in load_cities()}
-    records = [r for r in records if r.city in enabled_city_names]
-    payload = [
+
+    # Load existing JSON history
+    existing: list[dict] = []
+    if output_path.is_file():
+        try:
+            raw = json.loads(output_path.read_text(encoding="utf-8"))
+            if isinstance(raw, list):
+                existing = [item for item in raw if isinstance(item, dict)]
+        except (json.JSONDecodeError, OSError):
+            pass  # corrupt or empty → start fresh
+
+    # Convert new ForecastRecords to dict form
+    new_dicts = [
         {
-            "captured_at": record.fetched_at,
-            "forecast_run_label": record.forecast_run_label,
-            "city": record.city,
-            "source": record.source,
-            "forecast_date": record.forecast_date,
-            "min_temp": record.temp_min,
-            "max_temp": record.temp_max,
-            "update_time": record.data_update_time,
+            "captured_at": r.fetched_at,
+            "forecast_run_label": r.forecast_run_label,
+            "city": r.city,
+            "source": r.source,
+            "forecast_date": r.forecast_date,
+            "min_temp": r.temp_min,
+            "max_temp": r.temp_max,
+            "update_time": r.data_update_time,
         }
-        for record in records
+        for r in new_records
     ]
+
+    # Merge + dedup (newer records win on key collision)
+    merged: dict[tuple, dict] = {}
+    for item in existing + new_dicts:
+        if item.get("city") not in enabled_city_names:
+            continue
+        key = _record_key(item)
+        merged[key] = item  # last-write-wins (new_dicts come after existing)
+
+    # Sort by real captured_at descending
+    sorted_records = sorted(
+        merged.values(),
+        key=lambda r: _parse_captured_at_ts(r.get("captured_at", "")),
+        reverse=True,
+    )
+
+    # Truncate
+    payload = sorted_records[:max_records]
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
@@ -616,7 +680,7 @@ def main() -> None:
 
     records = collect_forecasts()
     save_records(db_path, records)
-    export_weather_data(db_path, export_path)
+    export_weather_data(records, export_path)
     print_table(records)
     print(f"\nSaved {len(records)} rows to {db_path}")
     print(f"Exported latest weather data to {export_path}")
