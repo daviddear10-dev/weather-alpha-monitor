@@ -41,6 +41,7 @@ weather-alpha-monitor/
     ├── cities.json
     ├── markets_draft.py
     ├── monitor.py
+    ├── nws_official.py
     ├── polymarket_candidates.py
     ├── test_nws_official.py
     └── test_shenzhen_official.py
@@ -404,7 +405,7 @@ SZ_OPEN_DATA_APP_KEY=你的appKey python -m weather_monitor.test_shenzhen_offici
 
 ## NOAA/NWS 美国城市官方源测试
 
-NOAA/NWS 官方天气源仍处于独立测试阶段，暂未接入 `python -m weather_monitor` 主采集流程。
+NOAA/NWS 官方天气源已提取为独立模块 `weather_monitor/nws_official.py`，提供可复用函数 `fetch_nws_forecast(city_name, latitude, longitude, timezone)`，暂未接入 `python -m weather_monitor` 主采集流程。
 
 测试脚本针对美国三个城市：
 
@@ -420,14 +421,15 @@ python -m weather_monitor.test_nws_official
 
 脚本流程：
 
-1. 调用 `https://api.weather.gov/points/{lat},{lon}` 获取网格点元数据
-2. 从返回的 `properties.forecast` 获取每日预报 URL
-3. 请求每日预报，按 `startTime` 解析每个 period 的当地日期
-4. 筛选城市当地明天日期的白天/夜晚时段
-5. NWS 默认返回华氏度 (°F)，自动转换为摄氏度 `C = (F - 32) * 5 / 9`
-6. 取当天所有时段的温度最低/最高值，组装成 `ForecastRecord`
-7. 只打印结果，不写入 SQLite，不接入主采集流程
-8. 如果请求失败或字段不匹配，只打印清楚错误，不让程序崩溃
+1. 调用 `weather_monitor/nws_official.py` 的 `fetch_nws_forecast()`
+2. `fetch_nws_forecast()` 内部调用 `https://api.weather.gov/points/{lat},{lon}` 获取网格点元数据
+3. 从返回的 `properties.forecast` 获取每日预报 URL
+4. 请求每日预报，按 `startTime` 解析每个 period 的当地日期
+5. 筛选城市当地明天日期的白天/夜晚时段
+6. NWS 默认返回华氏度 (°F)，自动转换为摄氏度 `C = (F - 32) * 5 / 9`
+7. 取当天所有时段的温度最低/最高值，组装成 `ForecastRecord`
+8. 只打印结果，不写入 SQLite，不接入主采集流程
+9. 如果请求失败或字段不匹配，只打印清楚错误，不让程序崩溃
 
 参考页面：
 
