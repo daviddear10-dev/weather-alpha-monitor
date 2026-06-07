@@ -328,6 +328,11 @@
 
     <section class="card toolbar">
       <label>
+        预报日期
+        <select id="forecastDateFilter">
+        </select>
+      </label>
+      <label>
         城市
         <select id="cityFilter">
           <option value="">全部城市</option>
@@ -538,6 +543,7 @@
 
     const cityFilter = document.querySelector("#cityFilter");
     const sourceFilter = document.querySelector("#sourceFilter");
+    const forecastDateFilter = document.querySelector("#forecastDateFilter");
 
     Promise.all([
       fetch("weather_data.json", { cache: "no-store" }).then((response) => {
@@ -574,6 +580,7 @@
 
     cityFilter.addEventListener("change", render);
     sourceFilter.addEventListener("change", render);
+    forecastDateFilter.addEventListener("change", render);
 
     function setupFilters(data) {
       unique(data.map((item) => item.city)).forEach((city) => {
@@ -582,11 +589,20 @@
       unique(data.map((item) => item.source)).forEach((source) => {
         sourceFilter.append(new Option(source, source));
       });
+      forecastDateFilter.append(new Option("全部预报日期", ""));
+      const forecastDates = unique(data.map((item) => item.forecast_date)).sort().reverse();
+      forecastDates.forEach((date) => {
+        forecastDateFilter.append(new Option(date, date));
+      });
+      if (forecastDates.length > 0) {
+        forecastDateFilter.value = forecastDates[0];
+      }
     }
 
     function render() {
       const filtered = state.data.filter((item) => {
-        return (!cityFilter.value || item.city === cityFilter.value)
+        return (!forecastDateFilter.value || item.forecast_date === forecastDateFilter.value)
+          && (!cityFilter.value || item.city === cityFilter.value)
           && (!sourceFilter.value || item.source === sourceFilter.value);
       });
       renderStats(filtered);
@@ -891,45 +907,118 @@
     }
 
     function renderCharts(data) {
-      const ordered = [...data].sort((a, b) => new Date(a.captured_at) - new Date(b.captured_at));
-      const labels = ordered.map((item) => `${compactDateTime(item.captured_at)} ${item.city} ${item.source}`);
-      const maxValues = ordered.map((item) => item.max_temp);
-      const minValues = ordered.map((item) => item.min_temp);
-      state.maxChart = drawLineChart(state.maxChart, "maxChart", labels, maxValues, "最高温", "#ff6b6b");
-      state.minChart = drawLineChart(state.minChart, "minChart", labels, minValues, "最低温", "#42d392");
+      if (!data.length) {
+        if (state.maxChart) { state.maxChart.destroy(); state.maxChart = null; }
+        if (state.minChart) { state.minChart.destroy(); state.minChart = null; }
+        return;
+      }
+
+      // Group by city + source, each group becomes a dataset series
+      const seriesMap = new Map();
+      data.forEach((item) => {
+        const key = `${item.city} · ${item.source}`;
+        const entry = seriesMap.get(key) || { city: item.city, source: item.source, points: [] };
+        entry.points.push({ x: item.captured_at, y_max: item.max_temp, y_min: item.min_temp, city: item.city, source: item.source, forecast_date: item.forecast_date });
+        seriesMap.set(key, entry);
+      });
+
+      // Build datasets sorted by captured_at within each series
+      const allTimestamps = new Set();
+      const maxDatasets = [];
+      const minDatasets = [];
+      const palette = ["#42d392", "#7aa2ff", "#ffbf69", "#ff6b6b", "#c084fc", "#f472b6", "#67e8f9", "#fbbf24", "#a78bfa", "#fb923c"];
+
+      let colorIdx = 0;
+      seriesMap.forEach((series) => {
+        const sorted = series.points.sort((a, b) => new Date(a.x) - new Date(b.x));
+        sorted.forEach((p) => allTimestamps.add(p.x));
+        const color = palette[colorIdx % palette.length];
+        colorIdx++;
+
+        maxDatasets.push({
+          label: `${series.city} · ${series.source}`,
+          data: sorted.map((p) => ({ x: p.x, y: p.y_max, city: p.city, source: p.source, forecast_date: p.forecast_date })),
+          borderColor: color,
+          backgroundColor: color + "22",
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.28,
+          fill: false
+        });
+
+        minDatasets.push({
+          label: `${series.city} · ${series.source}`,
+          data: sorted.map((p) => ({ x: p.x, y: p.y_min, city: p.city, source: p.source, forecast_date: p.forecast_date })),
+          borderColor: color,
+          backgroundColor: color + "22",
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.28,
+          fill: false
+        });
+      });
+
+      state.maxChart = drawMultiChart(state.maxChart, "maxChart", maxDatasets, "℃");
+      state.minChart = drawMultiChart(state.minChart, "minChart", minDatasets, "℃");
     }
 
-    function drawLineChart(existingChart, canvasId, labels, values, label, color) {
+    function drawMultiChart(existingChart, canvasId, datasets, yUnit) {
       if (existingChart) existingChart.destroy();
+
+      // Collect all unique timestamps sorted, use as shared category labels
+      const labelSet = new Set();
+      datasets.forEach((ds) => ds.data.forEach((p) => labelSet.add(p.x)));
+      const labels = Array.from(labelSet).sort(
+        (a, b) => new Date(a).getTime() - new Date(b).getTime()
+      );
+
+      // Build data arrays keyed by label index
+      const parsedDatasets = datasets.map((ds) => {
+        const labelToPoint = new Map(ds.data.map((p) => [p.x, p]));
+        return {
+          ...ds,
+          data: labels.map((label, idx) => {
+            const p = labelToPoint.get(label);
+            return p ? { x: idx, y: p.y, city: p.city, source: p.source, forecast_date: p.forecast_date, rawX: p.x } : null;
+          }).filter(Boolean),
+          spanGaps: false
+        };
+      });
+
       return new Chart(document.querySelector(`#${canvasId}`), {
         type: "line",
         data: {
-          labels,
-          datasets: [{
-            label,
-            data: values,
-            borderColor: color,
-            backgroundColor: `${color}33`,
-            pointRadius: 3,
-            pointHoverRadius: 5,
-            tension: 0.28,
-            fill: true
-          }]
+          labels: labels.map((l) => shortDateTime(l)),
+          datasets: parsedDatasets.map((ds) => ({
+            ...ds,
+            parsing: { xAxisKey: "x", yAxisKey: "y" }
+          }))
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: { mode: "nearest", intersect: false },
           plugins: {
-            legend: { labels: { color: "#edf2ff" } },
-            tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${formatTemp(context.parsed.y)}` } }
+            legend: {
+              labels: { color: "#edf2ff", usePointStyle: true, boxWidth: 8, padding: 16 }
+            },
+            tooltip: {
+              callbacks: {
+                title: (items) => items.length && items[0].raw.rawX ? shortDateTime(items[0].raw.rawX) : "",
+                label: (context) => {
+                  const p = context.raw;
+                  return `${p.city} · ${p.source} | ${p.forecast_date}: ${formatTemp(context.parsed.y)}`;
+                }
+              }
+            }
           },
           scales: {
             x: {
-              ticks: { color: "#9aa8c7", maxRotation: 45, minRotation: 0 },
+              ticks: { color: "#9aa8c7", maxRotation: 45, minRotation: 0, maxTicksLimit: 12 },
               grid: { color: "rgba(255,255,255,0.06)" }
             },
             y: {
-              ticks: { color: "#9aa8c7", callback: (value) => `${value}℃` },
+              ticks: { color: "#9aa8c7", callback: (value) => `${value}${yUnit}` },
               grid: { color: "rgba(255,255,255,0.06)" }
             }
           }
@@ -979,6 +1068,13 @@
       const number = Number(value);
       if (!Number.isFinite(number)) return "-";
       return Number.isInteger(number) ? String(number) : number.toFixed(1);
+    }
+
+    function shortDateTime(value) {
+      if (!value) return "-";
+      // "2026-06-07T11:34:18+08:00" -> "06-07 11:34"
+      const match = value.match(/^\d{4}-(\d{2}-\d{2})T(\d{2}:\d{2})/);
+      return match ? `${match[1]} ${match[2]}` : value.replace("T", " ").slice(0, 16);
     }
 
     function compactDateTime(value) {
