@@ -309,6 +309,8 @@ def load_recent_records(db_path: Path, limit: int = 20) -> list[ForecastRecord]:
 
 def export_weather_data(db_path: Path, output_path: Path, limit: int = 100) -> None:
     records = load_recent_records(db_path, limit=limit)
+    enabled_city_names = {city.name for city in load_cities()}
+    records = [r for r in records if r.city in enabled_city_names]
     payload = [
         {
             "captured_at": record.fetched_at,

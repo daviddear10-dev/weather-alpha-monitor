@@ -278,7 +278,7 @@
     <header>
       <div>
         <h1>Weather Alpha Monitor</h1>
-        <p class="subtitle">多城市明日最高/最低温监控。数据来自 Open-Meteo、香港天文台、NOAA/NWS，页面由 GitHub Pages 静态展示。</p>
+        <p class="subtitle">多城市明日最高/最低温监控。数据来自 Open-Meteo、香港天文台、NOAA/NWS、NEA/MSS，页面由 GitHub Pages 静态展示。</p>
       </div>
       <div class="grid stats">
         <article class="card stat">
@@ -350,15 +350,17 @@
       <article class="card section">
         <div class="section-head">
           <h2>明日最高温</h2>
-          <span class="hint">按抓取时间排序</span>
+          <span class="hint" id="maxChartHint">按抓取时间排序</span>
         </div>
+        <div class="hint" id="maxChartNote" style="margin-bottom:8px;color:var(--muted);font-size:12px;"></div>
         <canvas id="maxChart"></canvas>
       </article>
       <article class="card section">
         <div class="section-head">
           <h2>明日最低温</h2>
-          <span class="hint">按抓取时间排序</span>
+          <span class="hint" id="minChartHint">按抓取时间排序</span>
         </div>
+        <div class="hint" id="minChartNote" style="margin-bottom:8px;color:var(--muted);font-size:12px;"></div>
         <canvas id="minChart"></canvas>
       </article>
     </section>
@@ -388,7 +390,7 @@
     <section class="card section" style="margin-top: 16px;">
       <div class="section-head">
         <h2>Polymarket 决策建议</h2>
-        <span class="hint">基于 markets.json 和最新多源预测</span>
+        <span class="hint">正式市场来自 markets.json；过期或无天气匹配的配置不会生成交易建议</span>
       </div>
       <div class="table-wrap">
         <table class="market-table">
@@ -611,6 +613,7 @@
       renderMarketTable();
       renderDraftMarketTable();
       renderCandidateMarketTable();
+      updateChartHints();
       renderCharts(filtered);
     }
 
@@ -692,10 +695,41 @@
         return;
       }
 
-      const rows = state.markets.map((market) => {
+      // Find latest capture time and current-run data (within 15 min)
+      const capturedMsList = state.data
+        .map((item) => new Date(item.captured_at).getTime())
+        .filter(Number.isFinite);
+      const latestCapturedMs = capturedMsList.length > 0
+        ? Math.max(...capturedMsList)
+        : 0;
+
+      const currentRunData = state.data.filter((item) => {
+        const capturedMs = new Date(item.captured_at).getTime();
+        return Number.isFinite(capturedMs)
+          && latestCapturedMs - capturedMs <= 15 * 60 * 1000;
+      });
+
+      const currentWeatherCityDates = new Set(
+        currentRunData
+          .filter((item) => item.city && item.forecast_date)
+          .map((item) => `${item.city}|${item.forecast_date}`)
+      );
+
+      const activeRows = [];
+      let expiredCount = 0;
+
+      state.markets.forEach((market) => {
+        const isCurrentMarket = currentWeatherCityDates.has(
+          `${market.city}|${market.forecast_date}`
+        );
+
+        if (!isCurrentMarket) {
+          expiredCount++;
+          return;
+        }
         const prediction = buildPredictionSummary(market.city, market.forecast_date);
         const decision = buildMarketDecision(market, prediction);
-        return `
+        activeRows.push(`
           <tr>
             <td>${escapeHtml(market.city)}</td>
             <td>${escapeHtml(market.forecast_date)}</td>
@@ -711,9 +745,22 @@
             <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
             <td><div class="reason">${escapeHtml(decision.reason)}</div></td>
           </tr>
-        `;
+        `);
       });
-      document.querySelector("#marketTable").innerHTML = rows.join("") || `<tr><td colspan="13"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
+
+      let html = "";
+      if (activeRows.length === 0) {
+        html += `<tr><td colspan="13"><div class="empty">当前没有与最新采集天气日期匹配的正式市场。</div></td></tr>`;
+      } else {
+        html += activeRows.join("");
+      }
+      if (expiredCount > 0) {
+        html += `<tr style="border-top: 2px solid rgba(255,191,105,0.3);"><td colspan="13" style="padding:8px 12px;color:var(--warn);font-size:12px;background:rgba(255,191,105,0.05);">`;
+        html += `已隐藏 ${expiredCount} 条过期 markets.json 配置，可更新或移除旧市场。`;
+        html += `</td></tr>`;
+      }
+
+      document.querySelector("#marketTable").innerHTML = html;
     }
 
     function renderDraftMarketTable() {
@@ -906,6 +953,20 @@
       return `${spreadText}，预测 ${formatTemp(predictedValue)}，距离盘口 ${formatTemp(distance)}，建议${direction}。`;
     }
 
+    function updateChartHints() {
+      const fd = forecastDateFilter.value;
+      const hint = fd
+        ? `横轴为抓取时间；预测目标日期：${fd}`
+        : "横轴为抓取时间；当前包含多个预报日期";
+      const note = fd
+        ? `当前展示的是系统在不同抓取时间，对 ${fd} 天气预测值的变化。`
+        : "当前展示多个目标日期的历史预测变化，请结合 tooltip 查看具体预报日期。";
+      document.querySelector("#maxChartHint").textContent = hint;
+      document.querySelector("#minChartHint").textContent = hint;
+      document.querySelector("#maxChartNote").textContent = note;
+      document.querySelector("#minChartNote").textContent = note;
+    }
+
     function renderCharts(data) {
       if (!data.length) {
         if (state.maxChart) { state.maxChart.destroy(); state.maxChart = null; }
@@ -958,11 +1019,23 @@
         });
       });
 
-      state.maxChart = drawMultiChart(state.maxChart, "maxChart", maxDatasets, "℃");
-      state.minChart = drawMultiChart(state.minChart, "minChart", minDatasets, "℃");
+            state.maxChart = drawMultiChart(
+        state.maxChart,
+        "maxChart",
+        maxDatasets,
+        "预测最高温（℃）",
+        "预测最高温"
+      );
+            state.minChart = drawMultiChart(
+        state.minChart,
+        "minChart",
+        minDatasets,
+        "预测最低温（℃）",
+        "预测最低温"
+      );
     }
 
-    function drawMultiChart(existingChart, canvasId, datasets, yUnit) {
+    function drawMultiChart(existingChart, canvasId, datasets, yUnit, tooltipMetricName) {
       if (existingChart) existingChart.destroy();
 
       // Collect all unique timestamps sorted, use as shared category labels
@@ -1004,21 +1077,27 @@
             },
             tooltip: {
               callbacks: {
-                title: (items) => items.length && items[0].raw.rawX ? shortDateTime(items[0].raw.rawX) : "",
+                title: (items) => {
+                  if (!items.length || !items[0].raw) return "";
+                  const p = items[0].raw;
+                  return `抓取时间：${shortDateTime(p.rawX)} | 预报日期：${p.forecast_date}`;
+                },
                 label: (context) => {
                   const p = context.raw;
-                  return `${p.city} · ${p.source} | ${p.forecast_date}: ${formatTemp(context.parsed.y)}`;
+                  return `城市：${p.city} | 数据源：${p.source} | ${tooltipMetricName}：${formatTemp(context.parsed.y)}`;
                 }
               }
             }
           },
           scales: {
             x: {
+              title: { display: true, text: "抓取时间", color: "#9aa8c7" },
               ticks: { color: "#9aa8c7", maxRotation: 45, minRotation: 0, maxTicksLimit: 12 },
               grid: { color: "rgba(255,255,255,0.06)" }
             },
             y: {
-              ticks: { color: "#9aa8c7", callback: (value) => `${value}${yUnit}` },
+              title: { display: true, text: yUnit, color: "#9aa8c7" },
+              ticks: { color: "#9aa8c7", callback: (value) => `${value}℃` },
               grid: { color: "rgba(255,255,255,0.06)" }
             }
           }
@@ -1055,7 +1134,9 @@
     function formatPrice(value) {
       const number = Number(value);
       if (!Number.isFinite(number)) return "-";
-      return number.toFixed(2);
+      if (number === 0) return "0.00";
+      if (number >= 0.01) return number.toFixed(2);
+      return number.toFixed(4);
     }
 
     function formatTemp(value) {
