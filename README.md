@@ -277,6 +277,15 @@ docs/polymarket_candidates.json
 - 会尝试从标题、问题和 slug 中解析 `forecast_date`，支持 `on June 6`、`on Jun 6`、`June 6, 2026`、`highest-temperature-in-hong-kong-on-june-6-2026`
 - 会根据 `or below`、`or lower`、`at or below` 判断 `condition <=`，根据 `or higher`、`or above`、`at or above` 判断 `condition >=`；没有方向短语时暂按 `=` 处理，并输出 `condition_reason`
 
+日期过滤规则：
+
+- 只保留城市当地「今天」和「明天」的市场，过期市场（昨天及更早）自动丢弃
+- 使用 `weather_monitor/cities.json` 中每个城市的 `timezone` 计算当地日期
+- 已关闭（`closed=true`）或非活跃（`active=false`）的市场自动过滤
+- 解析不出 `forecast_date` 的市场直接丢弃
+
+脚本运行后会输出统计信息：API 原始市场数量、各类过滤数量、最终候选市场数量。
+
 如果 API 请求失败，命令会打印错误并输出空数组，避免程序崩溃。
 
 ## Polymarket markets 草稿生成

@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from datetime import datetime
 from typing import Any, Optional
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 import requests
 
@@ -14,6 +16,7 @@ from .monitor import load_cities
 EVENTS_URL = "https://gamma-api.polymarket.com/events"
 OUTPUT_PATH = Path("docs/polymarket_candidates.json")
 POLYMARKET_EVENT_URL = "https://polymarket.com/event/{slug}"
+DEFAULT_TIMEZONE = "Asia/Shanghai"
 
 WEATHER_KEYWORDS = [
     "weather",
@@ -24,30 +27,18 @@ WEATHER_KEYWORDS = [
 ]
 
 MONTHS = {
-    "jan": 1,
-    "january": 1,
-    "feb": 2,
-    "february": 2,
-    "mar": 3,
-    "march": 3,
-    "apr": 4,
-    "april": 4,
+    "jan": 1, "january": 1,
+    "feb": 2, "february": 2,
+    "mar": 3, "march": 3,
+    "apr": 4, "april": 4,
     "may": 5,
-    "jun": 6,
-    "june": 6,
-    "jul": 7,
-    "july": 7,
-    "aug": 8,
-    "august": 8,
-    "sep": 9,
-    "sept": 9,
-    "september": 9,
-    "oct": 10,
-    "october": 10,
-    "nov": 11,
-    "november": 11,
-    "dec": 12,
-    "december": 12,
+    "jun": 6, "june": 6,
+    "jul": 7, "july": 7,
+    "aug": 8, "august": 8,
+    "sep": 9, "sept": 9, "september": 9,
+    "oct": 10, "october": 10,
+    "nov": 11, "november": 11,
+    "dec": 12, "december": 12,
 }
 
 CITY_ALIASES = {
@@ -90,32 +81,145 @@ def build_city_aliases() -> dict[str, list[str]]:
     return aliases
 
 
+def build_city_timezones() -> dict[str, ZoneInfo]:
+    """Build city_name -> ZoneInfo mapping from cities.json."""
+    tz_map: dict[str, ZoneInfo] = {}
+    for city in load_cities():
+        tz_name = city.timezone
+        try:
+            tz_map[city.name] = ZoneInfo(tz_name)
+        except ZoneInfoNotFoundError:
+            tz_map[city.name] = ZoneInfo(DEFAULT_TIMEZONE)
+    return tz_map
+
+
+def get_city_local_today_tomorrow(city_name: str, tz_map: dict[str, ZoneInfo]) -> set[str]:
+    """Return {today_iso, tomorrow_iso} for the given city's local timezone."""
+    tz = tz_map.get(city_name, ZoneInfo(DEFAULT_TIMEZONE))
+    today = datetime.now(tz).date()
+    tomorrow = today + timedelta(days=1)
+    return {today.isoformat(), tomorrow.isoformat()}
+
+
 def collect_candidates(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     city_aliases = build_city_aliases()
+    city_timezones = build_city_timezones()
+    # Pre-compute today/tomorrow for each known city
+    city_date_ranges = {
+        name: get_city_local_today_tomorrow(name, city_timezones)
+        for name in city_aliases
+    }
+
     candidates = []
     seen_keys = set()
+    stats = Counter()
+
     for event in events:
         markets = event.get("markets")
         if not isinstance(markets, list) or not markets:
             markets = [None]
         for market in markets:
+            stats["api_raw_markets"] += 1
+
             text = combined_text(event, market)
             if not has_weather_keyword(text):
+                stats["skipped_no_keyword"] += 1
                 continue
+
             city_match = match_city(text, city_aliases)
             if city_match is None:
+                stats["skipped_no_city"] += 1
                 continue
+
+            city_name, matched_alias = city_match
+
             candidate = build_candidate(event, market, city_match)
+
+            # Filter: closed markets
+            if candidate.get("closed") is True:
+                stats["filtered_closed"] += 1
+                continue
+
+            # Filter: not active
+            if candidate.get("active") is False:
+                stats["filtered_inactive"] += 1
+                continue
+
+            # Filter: not accepting orders
+            if candidate.get("accepting_orders") is False:
+                stats["filtered_not_accepting_orders"] += 1
+                continue
+
+            # Filter: end_date has passed (market already ended)
+            end_date_str = candidate.get("end_date")
+            if end_date_str:
+                end_dt = parse_iso_datetime(end_date_str)
+                if end_dt is not None and end_dt < datetime.now(timezone.utc):
+                    stats["filtered_ended"] += 1
+                    continue
+
+            # Filter: forecast_date must be today or tomorrow in city's local TZ
+            forecast_date = candidate.get("forecast_date")
+            if not forecast_date:
+                stats["filtered_no_date"] += 1
+                continue
+
+            allowed_dates = city_date_ranges.get(
+                city_name,
+                get_city_local_today_tomorrow(city_name, city_timezones),
+            )
+            if forecast_date not in allowed_dates:
+                stats["filtered_date_out_of_range"] += 1
+                continue
+
             dedupe_key = (
                 candidate.get("raw_event_id"),
                 candidate.get("raw_market_id"),
                 candidate.get("city"),
             )
             if dedupe_key in seen_keys:
+                stats["skipped_duplicate"] += 1
                 continue
             seen_keys.add(dedupe_key)
+
+            # Mark date category for sorting
+            today_iso = datetime.now(
+                city_timezones.get(city_name, ZoneInfo(DEFAULT_TIMEZONE))
+            ).date().isoformat()
+            candidate["_date_category"] = 0 if forecast_date == today_iso else 1
+
             candidates.append(candidate)
+
+    # Sort: today first, then tomorrow, then by volume24hr desc
+    candidates.sort(
+        key=lambda c: (
+            c.get("_date_category", 99),
+            -(parse_number(c.get("volume24hr")) or 0),
+        )
+    )
+
+    # Remove internal sort key
+    for c in candidates:
+        c.pop("_date_category", None)
+
+    # Print stats
+    print_statistics(stats, len(candidates))
+
     return candidates
+
+
+def print_statistics(stats: Counter, final_count: int) -> None:
+    print(f"API 原始市场数量: {stats['api_raw_markets']}")
+    print(f"因无天气关键词跳过: {stats.get('skipped_no_keyword', 0)}")
+    print(f"因无法匹配城市跳过: {stats.get('skipped_no_city', 0)}")
+    print(f"因市场已关闭过滤: {stats.get('filtered_closed', 0)}")
+    print(f"因市场不活跃过滤: {stats.get('filtered_inactive', 0)}")
+    print(f"因停止接单过滤: {stats.get('filtered_not_accepting_orders', 0)}")
+    print(f"因市场结束时间已到过滤: {stats.get('filtered_ended', 0)}")
+    print(f"因日期不在当地今天/明天过滤: {stats.get('filtered_date_out_of_range', 0)}")
+    print(f"因无预报日期过滤: {stats.get('filtered_no_date', 0)}")
+    print(f"因重复跳过: {stats.get('skipped_duplicate', 0)}")
+    print(f"最终候选市场数量: {final_count}")
 
 
 def combined_text(event: dict[str, Any], market: Optional[dict[str, Any]]) -> str:
@@ -176,6 +280,8 @@ def build_candidate(
     )
     temperature = parse_temperature(parsing_text)
     condition, condition_reason = parse_condition(parsing_text)
+    forecast_date = parse_forecast_date(parsing_text)
+
     candidate = {
         "city": city,
         "matched_city_alias": matched_alias,
@@ -183,7 +289,7 @@ def build_candidate(
         "market_question": market_question,
         "slug": slug,
         "event_slug": event_slug,
-        "forecast_date": parse_forecast_date(parsing_text),
+        "forecast_date": forecast_date,
         "condition": condition,
         "condition_reason": condition_reason,
         "start_date": get_first_value(market, event, "startDate"),
@@ -191,8 +297,9 @@ def build_candidate(
         "volume": parse_number(get_first_value(market, event, "volume")),
         "volume24hr": parse_number(get_first_value(market, event, "volume24hr")),
         "liquidity": parse_number(get_first_value(market, event, "liquidity")),
-        "active": bool(get_first_value(market, event, "active")),
-        "closed": bool(get_first_value(market, event, "closed")),
+        "active": parse_bool(get_first_value(market, event, "active")),
+        "closed": parse_bool(get_first_value(market, event, "closed")),
+        "accepting_orders": parse_bool(get_first_value(market, event, "acceptingOrders")),
         "raw_market_id": market.get("id") if market else None,
         "raw_event_id": event.get("id"),
         "url": POLYMARKET_EVENT_URL.format(slug=event_slug) if event_slug else None,
@@ -297,6 +404,34 @@ def parse_jsonish_list(value: Any) -> list[Any]:
     return []
 
 
+def parse_iso_datetime(value: Any) -> Optional[datetime]:
+    if not value:
+        return None
+    try:
+        text = str(value).strip()
+        # Handle 'Z' suffix and timezone offsets
+        text = text.replace("Z", "+00:00")
+        return datetime.fromisoformat(text)
+    except (ValueError, TypeError):
+        return None
+
+
+def parse_bool(value: Any) -> Optional[bool]:
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in ("true", "1"):
+            return True
+        if lowered in ("false", "0"):
+            return False
+    return None
+
+
 def parse_number(value: Any) -> Optional[float]:
     if value is None or value == "":
         return None
@@ -322,7 +457,6 @@ def main() -> None:
     except Exception as exc:
         print(f"Polymarket API 请求失败：{exc}")
     write_candidates(candidates)
-    print(f"找到 {len(candidates)} 个候选市场")
     print(f"写入 {OUTPUT_PATH}")
 
 

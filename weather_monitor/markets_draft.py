@@ -36,8 +36,11 @@ def build_drafts(
     weather_city_dates: set[tuple[str, str]],
 ) -> list[dict[str, Any]]:
     deduped: dict[tuple[str, str, float, str], dict[str, Any]] = {}
+    stats = {"total_candidates": len(candidates), "filtered_not_eligible": 0, "duplicates_deduped": 0}
+
     for candidate in candidates:
         if not is_eligible_candidate(candidate, weather_city_dates):
+            stats["filtered_not_eligible"] += 1
             continue
         draft = build_draft_record(candidate)
         key = (
@@ -47,9 +50,14 @@ def build_drafts(
             draft["condition"],
         )
         existing = deduped.get(key)
-        if existing is None or value_for_sort(draft.get("volume24hr")) > value_for_sort(existing.get("volume24hr")):
+        if existing is None:
             deduped[key] = draft
-    return sorted(
+        else:
+            stats["duplicates_deduped"] += 1
+            if value_for_sort(draft.get("volume24hr")) > value_for_sort(existing.get("volume24hr")):
+                deduped[key] = draft
+
+    drafts = sorted(
         deduped.values(),
         key=lambda item: (
             item["forecast_date"],
@@ -57,6 +65,13 @@ def build_drafts(
             float(item["threshold"]),
         ),
     )
+
+    print(f"候选市场总数: {stats['total_candidates']}")
+    print(f"因不满足条件过滤: {stats['filtered_not_eligible']}")
+    print(f"因重复去重: {stats['duplicates_deduped']}")
+    print(f"最终草稿市场数量: {len(drafts)}")
+
+    return drafts
 
 
 def is_eligible_candidate(
@@ -74,6 +89,7 @@ def is_eligible_candidate(
         and candidate.get("condition") in ALLOWED_CONDITIONS
         and candidate.get("active") is True
         and candidate.get("closed") is False
+        and candidate.get("accepting_orders") is not False
     )
 
 
@@ -126,8 +142,7 @@ def main() -> None:
     drafts = build_drafts(candidates, weather_city_dates)
     write_drafts(drafts)
     print(f"weather_data 中有 {len(weather_city_dates)} 个 city/date 组合")
-    print(f"candidates 有 {len(candidates)} 条")
-    print(f"生成 markets_draft {len(drafts)} 条")
+    print(f"写入 {OUTPUT_PATH}")
 
 
 if __name__ == "__main__":
