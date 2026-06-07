@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import os
 import tempfile
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -11,8 +11,14 @@ from zoneinfo import ZoneInfo
 
 HKO_TZ = ZoneInfo("Asia/Hong_Kong")
 
-CACHE_DIR = "data"
-CACHE_FILE = os.path.join(CACHE_DIR, "hong_kong_today_forecast_cache.json")
+_DEFAULT_CACHE_DIR = "data"
+_DEFAULT_CACHE_FILENAME = "hong_kong_today_forecast_cache.json"
+
+
+def _resolve_cache_path(cache_dir: str | None = None) -> str:
+    """Resolve the full cache file path, with optional directory override."""
+    base = cache_dir if cache_dir is not None else _DEFAULT_CACHE_DIR
+    return os.path.join(base, _DEFAULT_CACHE_FILENAME)
 
 
 @dataclass
@@ -26,9 +32,15 @@ class ForecastCacheEntry:
     forecast_desc: str     # HKO flw forecastDesc (truncated if very long)
 
 
-def save_forecast_cache(entry: ForecastCacheEntry) -> None:
+def save_forecast_cache(
+    entry: ForecastCacheEntry,
+    *,
+    cache_dir: str | None = None,
+) -> None:
     """Atomically write today's HKO forecast snapshot to the cache file."""
-    Path(CACHE_DIR).mkdir(parents=True, exist_ok=True)
+    cache_file = _resolve_cache_path(cache_dir)
+    dir_path = os.path.dirname(cache_file) or "."
+    Path(dir_path).mkdir(parents=True, exist_ok=True)
 
     data = {
         "forecast_date": entry.forecast_date,
@@ -41,13 +53,12 @@ def save_forecast_cache(entry: ForecastCacheEntry) -> None:
     }
 
     # Atomic write: temp file then rename
-    fd, tmp_path = tempfile.mkstemp(dir=CACHE_DIR, suffix=".tmp")
+    fd, tmp_path = tempfile.mkstemp(dir=dir_path, suffix=".tmp")
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
-        os.replace(tmp_path, CACHE_FILE)
+        os.replace(tmp_path, cache_file)
     except Exception:
-        # Clean up temp file on failure
         try:
             os.unlink(tmp_path)
         except OSError:
@@ -55,16 +66,20 @@ def save_forecast_cache(entry: ForecastCacheEntry) -> None:
         raise
 
 
-def load_forecast_cache() -> Optional[ForecastCacheEntry]:
+def load_forecast_cache(
+    *,
+    cache_dir: str | None = None,
+) -> Optional[ForecastCacheEntry]:
     """Load today's valid HKO forecast snapshot from cache.
 
     Returns None if cache missing, corrupted, or forecast_date != today in HKT.
     """
-    if not os.path.isfile(CACHE_FILE):
+    cache_file = _resolve_cache_path(cache_dir)
+    if not os.path.isfile(cache_file):
         return None
 
     try:
-        with open(CACHE_FILE, "r", encoding="utf-8") as f:
+        with open(cache_file, "r", encoding="utf-8") as f:
             data = json.load(f)
     except (json.JSONDecodeError, OSError):
         return None
@@ -72,7 +87,6 @@ def load_forecast_cache() -> Optional[ForecastCacheEntry]:
     if not isinstance(data, dict):
         return None
 
-    # Must match today in HKT
     today = datetime.now(HKO_TZ).strftime("%Y-%m-%d")
     if data.get("forecast_date") != today:
         return None

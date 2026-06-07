@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 import sys
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -15,6 +14,7 @@ from .hong_kong_probability import (
     format_probability_table,
     bucket_for_temp,
 )
+from .hong_kong_forecast_parser import extract_hko_today_max_temp
 from .hong_kong_forecast_cache import (
     ForecastCacheEntry,
     save_forecast_cache,
@@ -217,25 +217,7 @@ def fetch_open_meteo_today_max(session: requests.Session) -> float | None:
         return None
 
 
-# Regex patterns for extracting daily max temperature from HKO flw forecastDesc.
-_HKO_MAX_TEMP_PATTERNS = [
-    re.compile(r"最高气温(?:约[为是]?|可达|大約[是]?|大约[是]?|为|為|達)?\s*(\d+(?:\.\d+)?)\s*度"),
-    re.compile(r"最高氣溫(?:約[為是]?|可達|大約[是]?|大约[是]?|為|为|達)?\s*(\d+(?:\.\d+)?)\s*度"),
-]
-
-
-def extract_hko_today_max_temp(forecast_desc: str) -> float | None:
-    """Extract today's forecast max temperature from HKO flw forecastDesc text."""
-    if not forecast_desc:
-        return None
-    for pattern in _HKO_MAX_TEMP_PATTERNS:
-        m = pattern.search(forecast_desc)
-        if m:
-            try:
-                return float(m.group(1))
-            except (ValueError, TypeError):
-                continue
-    return None
+# imported from .hong_kong_forecast_parser
 
 
 # ── Offline cache tests ────────────────────────────────────────────────────
