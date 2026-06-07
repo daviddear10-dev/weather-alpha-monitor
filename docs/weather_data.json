@@ -1,5 +1,55 @@
 [
   {
+    "captured_at": "2026-06-07T19:51:46+08:00",
+    "forecast_run_label": "manual",
+    "city": "新加坡",
+    "source": "NEA/MSS",
+    "forecast_date": "2026-06-08",
+    "min_temp": 25.0,
+    "max_temp": 33.0,
+    "update_time": "2026-06-07T05:11:54+08:00"
+  },
+  {
+    "captured_at": "2026-06-07T19:51:40+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "香港天文台",
+    "forecast_date": "2026-06-08",
+    "min_temp": 25.0,
+    "max_temp": 29.0,
+    "update_time": "2026-06-07T19:50:00+08:00"
+  },
+  {
+    "captured_at": "2026-06-07T19:51:40+08:00",
+    "forecast_run_label": "manual",
+    "city": "新加坡",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-08",
+    "min_temp": 23.4,
+    "max_temp": 30.9,
+    "update_time": "2026-06-07T19:51:40+08:00"
+  },
+  {
+    "captured_at": "2026-06-07T19:51:40+08:00",
+    "forecast_run_label": "manual",
+    "city": "纽约",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-08",
+    "min_temp": 15.3,
+    "max_temp": 25.4,
+    "update_time": "2026-06-07T19:51:40+08:00"
+  },
+  {
+    "captured_at": "2026-06-07T19:51:40+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-08",
+    "min_temp": 24.8,
+    "max_temp": 27.2,
+    "update_time": "2026-06-07T19:51:40+08:00"
+  },
+  {
     "captured_at": "2026-06-07T14:13:21+08:00",
     "forecast_run_label": "manual",
     "city": "新加坡",
@@ -360,6 +410,16 @@
     "update_time": "2026-06-07T07:53:17+08:00"
   },
   {
+    "captured_at": "2026-06-07T07:51:45-04:00",
+    "forecast_run_label": "manual",
+    "city": "纽约",
+    "source": "NOAA/NWS",
+    "forecast_date": "2026-06-08",
+    "min_temp": 15.6,
+    "max_temp": 23.9,
+    "update_time": "2026-06-07T10:17:06+00:00"
+  },
+  {
     "captured_at": "2026-06-07T06:40:40+08:00",
     "forecast_run_label": "morning_0700",
     "city": "香港",
@@ -428,35 +488,5 @@
     "min_temp": 16.1,
     "max_temp": 23.3,
     "update_time": "2026-06-07T03:01:27+00:00"
-  },
-  {
-    "captured_at": "2026-06-07T01:10:16-04:00",
-    "forecast_run_label": "manual",
-    "city": "纽约",
-    "source": "NOAA/NWS",
-    "forecast_date": "2026-06-08",
-    "min_temp": 16.1,
-    "max_temp": 23.3,
-    "update_time": "2026-06-07T03:04:30+00:00"
-  },
-  {
-    "captured_at": "2026-06-07T01:06:28-04:00",
-    "forecast_run_label": "manual",
-    "city": "纽约",
-    "source": "NOAA/NWS",
-    "forecast_date": "2026-06-08",
-    "min_temp": 16.1,
-    "max_temp": 23.3,
-    "update_time": "2026-06-07T03:04:30+00:00"
-  },
-  {
-    "captured_at": "2026-06-07T00:12:38+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "香港天文台",
-    "forecast_date": "2026-06-08",
-    "min_temp": 26.0,
-    "max_temp": 29.0,
-    "update_time": "2026-06-07T00:00:00+08:00"
   }
 ]
