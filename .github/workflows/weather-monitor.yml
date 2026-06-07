@@ -52,10 +52,17 @@ jobs:
 
           if git diff --cached --quiet; then
             echo "No data changes to commit."
+            git restore weather_forecasts.sqlite 2>/dev/null || true
             exit 0
           fi
 
           git commit -m "Update weather and market candidate data"
+
+          # SQLite is for this runner only, never committed
+          git restore weather_forecasts.sqlite 2>/dev/null || true
+
+          echo "Working tree before pull:"
+          git status --short
 
           for attempt in 1 2 3; do
             if git pull --rebase && git push; then
