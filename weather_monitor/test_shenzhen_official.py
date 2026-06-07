@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import json
 import os
+from collections import Counter
 from dataclasses import asdict
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Optional
 from zoneinfo import ZoneInfo
@@ -20,6 +21,10 @@ API_DOCUMENT_URL = f"{BASE_URL}/data/api/getApiDocument"
 PREVIEW_FIELDS_URL = f"{BASE_URL}/data/api/getPreviewApiItem"
 PREVIEW_ROWS_URL = f"{BASE_URL}/data/api/getPreviewApi"
 SHENZHEN_TZ = "Asia/Shanghai"
+PREFERRED_AREA = "福田区"
+
+DAYTIME_HOURS = {9, 11, 13, 15, 17}
+MIN_HOURS_FOR_VALID_FORECAST = 6
 
 
 def main() -> None:
@@ -48,7 +53,7 @@ def main() -> None:
     print_key_fields(rows)
     record = parse_forecast_record(rows)
     if record is None:
-        print("解析失败：没有找到深圳当地明天日期对应的温度数据。")
+        print("解析失败：未生成 ForecastRecord。")
         return
 
     print("解析成功，ForecastRecord:")
@@ -114,10 +119,20 @@ def try_official_api(session: requests.Session, api_context: str) -> list[dict[s
         print("未设置 SZ_OPEN_DATA_APP_KEY，跳过正式 API，仅尝试预览接口。")
         return []
 
+    tz = ZoneInfo(SHENZHEN_TZ)
+    today = (datetime.now(tz).date()).strftime("%Y%m%d")
+    tomorrow = (datetime.now(tz).date() + timedelta(days=1)).strftime("%Y%m%d")
+
     url = f"{BASE_URL}/{api_context}"
-    params = {"page": 1, "rows": 200, "appKey": app_key}
+    params = {
+        "page": 1,
+        "rows": 10000,
+        "appKey": app_key,
+        "startDate": today,
+        "endDate": tomorrow,
+    }
     try:
-        response = session.get(url, params=params, timeout=25)
+        response = session.post(url, data=params, timeout=25)
         payload = response.json()
     except Exception as exc:
         print(f"正式 API 请求失败: {exc}")
@@ -221,11 +236,55 @@ def print_key_fields(rows: list[dict[str, Any]]) -> None:
 
 def parse_forecast_record(rows: list[dict[str, Any]]) -> Optional[ForecastRecord]:
     target_date = tomorrow_date_for_timezone(SHENZHEN_TZ)
-    target_rows = [
+
+    # Prefer 福田区 to avoid mixing multiple districts
+    futian_rows = [
         row
         for row in rows
+        if str(row.get("AREANAME", "")).strip() == PREFERRED_AREA
+    ]
+    if futian_rows:
+        print(f"使用 {PREFERRED_AREA} 数据（共 {len(futian_rows)} 行）")
+        candidate_rows = futian_rows
+    else:
+        print(f"未找到 {PREFERRED_AREA} 数据，退回使用全部区域")
+        candidate_rows = rows
+
+    # Print date distribution across all candidate rows
+    print_date_distribution(candidate_rows)
+
+    # Extract hours from FORECASTTIME
+    forecast_hours = extract_forecast_hours(candidate_rows)
+
+    target_rows = [
+        row
+        for row in candidate_rows
         if parse_date_prefix(row.get("FORECASTTIME")) == target_date
     ]
+    target_hours = extract_forecast_hours(target_rows)
+
+    print(f"目标日期 {target_date} 可用小时: {sorted(target_hours)}")
+
+    # Completeness check: minimum hours
+    if len(target_hours) < MIN_HOURS_FOR_VALID_FORECAST:
+        print(
+            f"目标日期数据不足（仅 {len(target_hours)} 个时段，"
+            f"需要至少 {MIN_HOURS_FOR_VALID_FORECAST} 个），"
+            f"暂不生成 ForecastRecord"
+        )
+        return None
+
+    # Daytime hours check
+    daytime_hours_in_target = target_hours & DAYTIME_HOURS
+    daytime_hour_matches = len(daytime_hours_in_target)
+    if daytime_hour_matches < 2:
+        print(
+            f"目标日期缺少白天预报时段（仅匹配 {sorted(daytime_hours_in_target)}，"
+            f"在 {sorted(DAYTIME_HOURS)} 中需至少 2 个），"
+            f"暂不生成 ForecastRecord"
+        )
+        return None
+
     temps = [
         temp
         for row in target_rows
@@ -233,6 +292,7 @@ def parse_forecast_record(rows: list[dict[str, Any]]) -> Optional[ForecastRecord
         if temp is not None
     ]
     if not temps:
+        print("目标日期无有效温度数据")
         return None
 
     update_time = latest_update_time(target_rows) or ""
@@ -247,6 +307,46 @@ def parse_forecast_record(rows: list[dict[str, Any]]) -> Optional[ForecastRecord
         temp_max=max(temps),
         data_update_time=update_time,
     )
+
+
+def extract_forecast_hours(rows: list[dict[str, Any]]) -> set[int]:
+    """Extract unique hour values from FORECASTTIME across all rows."""
+    hours: set[int] = set()
+    for row in rows:
+        ft = row.get("FORECASTTIME")
+        hour = parse_hour(ft)
+        if hour is not None:
+            hours.add(hour)
+    return hours
+
+
+def parse_hour(value: Any) -> Optional[int]:
+    """Parse hour from a datetime string like '2026-06-08 11:00:00'."""
+    if not value:
+        return None
+    text = str(value).strip()
+    if len(text) < 13:
+        return None
+    try:
+        return int(text[11:13])
+    except (ValueError, IndexError):
+        return None
+
+
+def print_date_distribution(rows: list[dict[str, Any]]) -> None:
+    """Print FORECASTTIME date distribution across all rows."""
+    date_counter: Counter[str] = Counter()
+    for row in rows:
+        ft = row.get("FORECASTTIME")
+        date_str = parse_date_prefix(ft)
+        if date_str:
+            date_counter[date_str] += 1
+    if date_counter:
+        print("正式 API 返回 FORECASTTIME 日期分布:")
+        for date_str in sorted(date_counter):
+            print(f"  {date_str}: {date_counter[date_str]}条")
+    else:
+        print("正式 API 返回中无有效 FORECASTTIME 日期")
 
 
 def parse_date_prefix(value: Any) -> Optional[str]:

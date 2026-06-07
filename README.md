@@ -358,6 +358,8 @@ select * from weather_forecasts order by id desc limit 20;
 
 深圳官方天气源仍处于独立测试阶段，暂未接入 `python -m weather_monitor` 主采集流程。
 
+接入前提：正式 API 需返回目标日期的完整逐时预报（至少 6 个时段且包含至少 2 个白天时段 09:00/11:00/13:00/15:00/17:00），否则脚本会拒绝生成 ForecastRecord。
+
 测试脚本：
 
 ```bash
@@ -367,10 +369,22 @@ python -m weather_monitor.test_shenzhen_official
 脚本会尝试：
 
 - 读取深圳市政府数据开放平台接口文档
-- 尝试调用深圳市气象局相关天气预报接口
-- 打印原始 JSON 的关键字段
-- 尝试解析深圳当地明天日期、最低温、最高温、数据更新时间
+- 使用 **POST** 请求调用深圳市气象局相关天气预报接口
+- 自动附加 `startDate` / `endDate` 参数（深圳当地今天/明天日期，格式 `yyyymmdd`）
+- 打印正式 API 返回中所有 FORECASTTIME 日期分布
+- 优先解析 `AREANAME="福田区"` 的逐时预报，避免多个区温度混在一起
+- 如果没有福田区数据，退回使用全部区域
+- 打印目标日期的可用小时列表及完整性检查结果
+- 如果目标日期不足 6 个时段或缺少白天预报时段，拒绝生成 ForecastRecord
 - 如果解析成功，转换成 `ForecastRecord` 格式并打印
+
+正式 API 请求参数：
+
+- `page=1`
+- `rows=10000`
+- `appKey`：从环境变量 `SZ_OPEN_DATA_APP_KEY` 读取
+- `startDate`：深圳当地今天日期（`yyyymmdd`）
+- `endDate`：深圳当地明天日期（`yyyymmdd`）
 
 参考页面：
 
