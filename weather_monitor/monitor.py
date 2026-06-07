@@ -13,11 +13,13 @@ import requests
 from tabulate import tabulate
 
 
+
 OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
 HKO_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php"
 LOCAL_TZ = timezone(timedelta(hours=8))
 DEFAULT_TIMEZONE = "Asia/Shanghai"
 HKO_TIMEZONE = "Asia/Hong_Kong"
+NWS_US_CITIES = {"纽约", "洛杉矶", "迈阿密"}
 
 
 @dataclass(frozen=True)
@@ -486,6 +488,22 @@ def collect_forecasts() -> list[ForecastRecord]:
     records = [fetch_open_meteo(city, fetched_at, forecast_run_label) for city in cities]
     if any(city.name == "香港" for city in cities):
         records.append(fetch_hko(fetched_at, forecast_run_label))
+    for city in cities:
+        if city.name in NWS_US_CITIES:
+            try:
+                from .nws_official import fetch_nws_forecast  # noqa: E402
+                nws_record = fetch_nws_forecast(
+                    city_name=city.name,
+                    latitude=city.latitude,
+                    longitude=city.longitude,
+                    timezone=city.timezone,
+                )
+                if nws_record is not None:
+                    records.append(nws_record)
+                else:
+                    print(f"NOAA/NWS 获取失败 ({city.name})，仅使用 Open-Meteo 数据")
+            except Exception as exc:
+                print(f"NOAA/NWS 异常 ({city.name}): {exc}，仅使用 Open-Meteo 数据")
     return records
 
 

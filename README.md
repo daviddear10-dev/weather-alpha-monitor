@@ -6,6 +6,7 @@
 
 - 使用 Open-Meteo API 获取配置城市的明日最高温和最低温
 - 额外使用香港天文台 Open Data API 获取香港明日最高温和最低温
+- 额外使用 NOAA/NWS API 获取纽约、洛杉矶、迈阿密明日最高温和最低温
 - 每次运行保存结果到 SQLite
 - 每次运行导出最近 100 条记录到 `docs/weather_data.json`
 - 每次抓取会根据北京时间自动标记批次 `forecast_run_label`
@@ -405,7 +406,7 @@ SZ_OPEN_DATA_APP_KEY=你的appKey python -m weather_monitor.test_shenzhen_offici
 
 ## NOAA/NWS 美国城市官方源测试
 
-NOAA/NWS 官方天气源已提取为独立模块 `weather_monitor/nws_official.py`，提供可复用函数 `fetch_nws_forecast(city_name, latitude, longitude, timezone)`，暂未接入 `python -m weather_monitor` 主采集流程。
+NOAA/NWS 官方天气源已接入 `python -m weather_monitor` 主采集流程。运行主程序时，纽约、洛杉矶、迈阿密三城会在 Open-Meteo 之外额外抓取 NOAA/NWS 数据作为第二数据源。NOAA/NWS 获取失败不影响 Open-Meteo 数据和其他城市。独立模块 `weather_monitor/nws_official.py` 提供可复用函数 `fetch_nws_forecast(city_name, latitude, longitude, timezone)`。
 
 测试脚本针对美国三个城市：
 
@@ -442,7 +443,7 @@ python -m weather_monitor.test_nws_official
 - Open-Meteo: `https://api.open-meteo.com/v1/forecast`
 - 香港天文台: `https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=fnd&lang=sc`
 - 深圳市政府数据开放平台: `https://opendata.sz.gov.cn/data/api/toApiDetails/29200_00900269`，独立测试中
-- 美国 NOAA/NWS: `https://api.weather.gov`，独立测试中（纽约、洛杉矶、迈阿密）
+- 美国 NOAA/NWS: `https://api.weather.gov`，已接入主流程（纽约、洛杉矶、迈阿密第二数据源）
 
 ## 备注
 
