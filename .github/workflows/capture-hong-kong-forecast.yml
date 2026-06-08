@@ -3,12 +3,10 @@ name: Capture Hong Kong Forecast
 on:
   workflow_dispatch:
   schedule:
-    # HKT 07:30 = UTC 23:30 (prev day)
-    - cron: "30 23 * * *"
-    # HKT 09:30 = UTC 01:30
-    - cron: "30 1 * * *"
-    # HKT 11:30 = UTC 03:30
-    - cron: "30 3 * * *"
+    # HKT 06:50, 07:50 = UTC 22:50, 23:50
+    - cron: "50 22-23 * * *"
+    # HKT 08:50, 09:50, 10:50, 11:50 = UTC 00:50, 01:50, 02:50, 03:50
+    - cron: "50 0-3 * * *"
 
 concurrency:
   group: repository-data-writer-${{ github.ref }}
