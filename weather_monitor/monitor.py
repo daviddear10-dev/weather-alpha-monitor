@@ -260,7 +260,7 @@ def init_db(db_path: Path) -> None:
                 source text not null,
                 forecast_date text not null,
                 forecast_run_label text not null default 'manual',
-                temp_min real not null,
+                temp_min real,
                 temp_max real not null,
                 data_update_time text not null,
                 created_at text not null default (datetime('now'))
@@ -288,6 +288,51 @@ def migrate_db(conn: sqlite3.Connection) -> None:
             add column forecast_run_label text not null default 'manual'
             """
         )
+
+    # Make temp_min nullable (migration for old NOT NULL constraint)
+    _migrate_temp_min_nullable(conn)
+
+
+def _migrate_temp_min_nullable(conn: sqlite3.Connection) -> None:
+    """Recreate weather_forecasts table with temp_min allowing NULL."""
+    info = {row[1]: row for row in conn.execute("pragma table_info(weather_forecasts)")}
+    col = info.get("temp_min")
+    if col is None:
+        return  # shouldn't happen, but safe
+    # col[3] is notnull flag: 0 = nullable, 1 = NOT NULL
+    if col[3] == 0:
+        return  # already nullable, nothing to do
+
+    print("Migrating weather_forecasts.temp_min to allow NULL...")
+    conn.execute("""
+        create table weather_forecasts_new (
+            id integer primary key autoincrement,
+            fetched_at text not null,
+            city text not null,
+            source text not null,
+            forecast_date text not null,
+            forecast_run_label text not null default 'manual',
+            temp_min real,
+            temp_max real not null,
+            data_update_time text not null,
+            created_at text not null default (datetime('now'))
+        )
+    """)
+    conn.execute("""
+        insert into weather_forecasts_new
+            (id, fetched_at, city, source, forecast_date,
+             forecast_run_label, temp_min, temp_max, data_update_time, created_at)
+        select id, fetched_at, city, source, forecast_date,
+               forecast_run_label, temp_min, temp_max, data_update_time, created_at
+        from weather_forecasts
+    """)
+    conn.execute("drop table weather_forecasts")
+    conn.execute("alter table weather_forecasts_new rename to weather_forecasts")
+    conn.execute("""
+        create index if not exists idx_weather_forecasts_lookup
+        on weather_forecasts (forecast_date, city, source)
+    """)
+    print("Migration complete: temp_min is now nullable.")
 
 
 def save_records(db_path: Path, records: list[ForecastRecord]) -> None:
