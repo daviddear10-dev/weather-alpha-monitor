@@ -111,7 +111,7 @@ def main() -> None:
                 if lo is None:
                     return {"bucket": name, "condition": "<=", "threshold": int(hi) if hi else None}
                 if hi is None:
-                    return {"bucket": name, "condition": ">=", "threshold": int(lo) if lo else None}
+                    return {"bucket": name, "condition": ">=", "threshold": round(lo) if lo is not None else None}
                 return {"bucket": name, "condition": "=", "threshold": round((lo + hi) / 2)}
         return {"bucket": name, "condition": "=", "threshold": None}
 

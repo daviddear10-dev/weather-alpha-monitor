@@ -95,7 +95,7 @@
     {
       "bucket": "34°C or higher",
       "condition": ">=",
-      "threshold": 33,
+      "threshold": 34,
       "probability": 7.5e-05
     }
   ],
