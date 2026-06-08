@@ -1,5 +1,75 @@
 [
   {
+    "captured_at": "2026-06-08T10:36:12+08:00",
+    "forecast_run_label": "manual",
+    "city": "新加坡",
+    "source": "NEA/MSS",
+    "forecast_date": "2026-06-09",
+    "min_temp": 25.0,
+    "max_temp": 34.0,
+    "update_time": "2026-06-08T05:01:00+08:00"
+  },
+  {
+    "captured_at": "2026-06-07T22:36:11-04:00",
+    "forecast_run_label": "manual",
+    "city": "纽约",
+    "source": "NOAA/NWS",
+    "forecast_date": "2026-06-08",
+    "min_temp": 15.6,
+    "max_temp": 23.9,
+    "update_time": "2026-06-08T00:22:20+00:00"
+  },
+  {
+    "captured_at": "2026-06-08T10:36:08+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-09",
+    "min_temp": 23.0,
+    "max_temp": 27.6,
+    "update_time": "2026-06-08T10:36:08+08:00"
+  },
+  {
+    "captured_at": "2026-06-08T10:36:08+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-08",
+    "min_temp": 25.4,
+    "max_temp": 28.9,
+    "update_time": "2026-06-08T10:36:08+08:00"
+  },
+  {
+    "captured_at": "2026-06-08T10:36:08+08:00",
+    "forecast_run_label": "manual",
+    "city": "纽约",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-08",
+    "min_temp": 16.2,
+    "max_temp": 23.4,
+    "update_time": "2026-06-08T10:36:08+08:00"
+  },
+  {
+    "captured_at": "2026-06-08T10:36:08+08:00",
+    "forecast_run_label": "manual",
+    "city": "新加坡",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-09",
+    "min_temp": 23.6,
+    "max_temp": 29.8,
+    "update_time": "2026-06-08T10:36:08+08:00"
+  },
+  {
+    "captured_at": "2026-06-08T10:36:08+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "香港天文台",
+    "forecast_date": "2026-06-09",
+    "min_temp": 25.0,
+    "max_temp": 29.0,
+    "update_time": "2026-06-08T09:50:00+08:00"
+  },
+  {
     "captured_at": "2026-06-07T21:59:53-04:00",
     "forecast_run_label": "manual",
     "city": "纽约",
@@ -71,6 +141,16 @@
   },
   {
     "captured_at": "2026-06-08T09:59:50+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "香港天文台-今日预测",
+    "forecast_date": "2026-06-08",
+    "min_temp": null,
+    "max_temp": 30.0,
+    "update_time": "2026-06-08T08:45:00+08:00"
+  },
+  {
+    "captured_at": "2026-06-08T09:38:15+08:00",
     "forecast_run_label": "manual",
     "city": "香港",
     "source": "香港天文台-今日预测",
