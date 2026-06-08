@@ -1,15 +1,15 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-08T12:43:44+08:00",
+  "captured_at": "2026-06-08T15:10:51+08:00",
   "local_date": "2026-06-08",
-  "local_hour": 12.72,
+  "local_hour": 15.17,
   "settlement_station": "香港天文台",
-  "current_temp": 28.0,
-  "today_max_temp": 29.2,
-  "achieved_bucket": "29°C",
-  "observed_at": "2026-06-08T12:00:00+08:00",
-  "max_temp_updated_at": "2026-06-08T12:30:00+08:00",
+  "current_temp": 30.0,
+  "today_max_temp": 30.6,
+  "achieved_bucket": "31°C",
+  "observed_at": "2026-06-08T15:00:00+08:00",
+  "max_temp_updated_at": "2026-06-08T15:00:00+08:00",
   "forecast_sources": [
     {
       "source": "Open-Meteo",
@@ -26,10 +26,10 @@
   "model_parameters": {
     "forecast_mean": 29.45,
     "source_spread": 1.1,
-    "model_center": 29.39,
-    "sigma": 1.085,
-    "no_new_high_probability": 0.43,
-    "remaining_upside_probability": 0.57
+    "model_center": 30.75,
+    "sigma": 0.935,
+    "no_new_high_probability": 0.8,
+    "remaining_upside_probability": 0.2
   },
   "probabilities": [
     {
@@ -66,37 +66,37 @@
       "bucket": "29°C",
       "condition": "=",
       "threshold": 29,
-      "probability": 0.540162
+      "probability": 0.0
     },
     {
       "bucket": "30°C",
       "condition": "=",
       "threshold": 30,
-      "probability": 0.306863
+      "probability": 0.0
     },
     {
       "bucket": "31°C",
       "condition": "=",
       "threshold": 31,
-      "probability": 0.127145
+      "probability": 0.925057
     },
     {
       "bucket": "32°C",
       "condition": "=",
       "threshold": 32,
-      "probability": 0.023764
+      "probability": 0.064077
     },
     {
       "bucket": "33°C",
       "condition": "=",
       "threshold": 33,
-      "probability": 0.001991
+      "probability": 0.010286
     },
     {
       "bucket": "34°C or higher",
       "condition": ">=",
       "threshold": 34,
-      "probability": 7.5e-05
+      "probability": 0.00058
     }
   ],
   "probability_sum": 1.0,
