@@ -396,32 +396,30 @@
         <table class="market-table">
           <colgroup>
             <col style="width: 70px;">
-            <col style="width: 108px;">
-            <col style="width: 96px;">
-            <col style="width: 78px;">
-            <col style="width: 116px;">
-            <col style="width: 76px;">
-            <col style="width: 116px;">
             <col style="width: 110px;">
+            <col style="width: 120px;">
+            <col style="width: 80px;">
+            <col style="width: 90px;">
+            <col style="width: 90px;">
+            <col style="width: 110px;">
+            <col style="width: 80px;">
+            <col style="width: 120px;">
+            <col style="width: 230px;">
             <col style="width: 300px;">
-            <col style="width: 88px;">
-            <col style="width: 96px;">
-            <col style="width: 260px;">
-            <col style="width: 420px;">
+            <col style="width: 360px;">
           </colgroup>
           <thead>
             <tr>
               <th>城市</th>
               <th>预报日期</th>
+              <th>市场线</th>
+              <th>YES 价格</th>
+              <th>模型概率</th>
+              <th>Edge</th>
               <th>建议方向</th>
               <th>置信度</th>
               <th>建议仓位</th>
-              <th>YES 价格</th>
-              <th>市场线</th>
-              <th>距离盘口</th>
               <th>当前预测</th>
-              <th>数据源数量</th>
-              <th>数据源分歧</th>
               <th>市场问题</th>
               <th>理由</th>
             </tr>
@@ -536,9 +534,11 @@
       markets: [],
       draftMarkets: [],
       candidates: [],
+      liveProbability: null,
       marketsLoaded: false,
       draftMarketsLoaded: false,
       candidatesLoaded: false,
+      liveProbabilityLoaded: false,
       maxChart: null,
       minChart: null
     };
@@ -560,22 +560,27 @@
         .catch(() => []),
       fetch("polymarket_candidates.json", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : [])
-        .catch(() => [])
+        .catch(() => []),
+      fetch("hong_kong_live_probability.json", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : null)
+        .catch(() => null)
     ])
-      .then(([weatherData, markets, draftMarkets, candidates]) => {
+      .then(([weatherData, markets, draftMarkets, candidates, liveProb]) => {
         state.data = Array.isArray(weatherData) ? weatherData : [];
         state.markets = Array.isArray(markets) ? markets : [];
         state.draftMarkets = Array.isArray(draftMarkets) ? draftMarkets : [];
         state.candidates = Array.isArray(candidates) ? candidates : [];
+        state.liveProbability = (liveProb && typeof liveProb === 'object' && liveProb.probabilities) ? liveProb : null;
         state.marketsLoaded = true;
         state.draftMarketsLoaded = true;
         state.candidatesLoaded = true;
+        state.liveProbabilityLoaded = true;
         setupFilters(state.data);
         render();
       })
       .catch(() => {
         document.querySelector("#recordsTable").innerHTML = `<tr><td colspan="8"><div class="empty">暂无数据，请先运行 weather_monitor 生成 weather_data.json。</div></td></tr>`;
-        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="13"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
+        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
         document.querySelector("#draftMarketTable").innerHTML = `<tr><td colspan="9"><div class="empty">暂无草稿市场数据。</div></td></tr>`;
         document.querySelector("#candidateMarketTable").innerHTML = `<tr><td colspan="10"><div class="empty">暂无候选市场数据。</div></td></tr>`;
       });
@@ -688,11 +693,11 @@
 
     function renderMarketTable() {
       if (!state.marketsLoaded) {
-        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="13"><div class="empty">加载中…</div></td></tr>`;
+        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">加载中…</div></td></tr>`;
         return;
       }
       if (state.markets.length === 0) {
-        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="13"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
+        document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
         return;
       }
 
@@ -729,34 +734,62 @@
           return;
         }
         const prediction = buildPredictionSummary(market.city, market.forecast_date);
-        const decision = buildMarketDecision(market, prediction);
-        activeRows.push(`
-          <tr>
-            <td>${escapeHtml(market.city)}</td>
-            <td>${escapeHtml(market.forecast_date)}</td>
-            <td><span class="tag ${decision.directionClass}">${escapeHtml(decision.direction)}</span></td>
-            <td><span class="tag ${decision.confidenceClass}">${escapeHtml(decision.confidence)}</span></td>
-            <td>${escapeHtml(decision.position)}</td>
-            <td>${formatPrice(market.yes_price)}</td>
-            <td>${escapeHtml(formatMarketLine(market))}</td>
-            <td>${escapeHtml(decision.distanceToLine)}${decision.tooClose ? ` <span class="tag neutral">太接近</span>` : ""}</td>
-            <td><div class="prediction wrap-cell">${escapeHtml(decision.currentPrediction)}</div></td>
-            <td>${decision.sourceCount}</td>
-            <td>${escapeHtml(decision.sourceSpread)}</td>
-            <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
-            <td><div class="reason">${escapeHtml(decision.reason)}</div></td>
-          </tr>
-        `);
+
+        // Use live probability model for HK markets if available
+        const lpDecision = buildLiveProbabilityDecision(market);
+
+        if (lpDecision) {
+          const lp = state.liveProbability;
+          activeRows.push(`
+            <tr>
+              <td>${escapeHtml(market.city)}</td>
+              <td>${escapeHtml(market.forecast_date)}</td>
+              <td>${escapeHtml(formatMarketLine(market))}</td>
+              <td>${formatPrice(market.yes_price)}</td>
+              <td>${lpDecision.modelProbability}</td>
+              <td>${lpDecision.edgeStr}</td>
+              <td><span class="tag ${lpDecision.directionClass}">${escapeHtml(lpDecision.direction)}</span></td>
+              <td><span class="tag ${lpDecision.confidenceClass}">${escapeHtml(lpDecision.confidence)}</span></td>
+              <td>${escapeHtml(lpDecision.position)}</td>
+              <td><div class="prediction wrap-cell" style="white-space:pre-line">${escapeHtml(lpDecision.currentPrediction)}</div></td>
+              <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
+              <td><div class="reason">${escapeHtml(lpDecision.reason)}</div></td>
+            </tr>
+          `);
+        } else {
+          const decision = buildMarketDecision(market, prediction);
+          decision.reason = [
+            decision.reason,
+            decision.sourceCount ? `数据源数量：${decision.sourceCount}` : "",
+            decision.sourceSpread !== "-" ? `数据源分歧：${decision.sourceSpread}` : "",
+          ].filter(Boolean).join(" | ");
+          activeRows.push(`
+            <tr>
+              <td>${escapeHtml(market.city)}</td>
+              <td>${escapeHtml(market.forecast_date)}</td>
+              <td>${escapeHtml(formatMarketLine(market))}</td>
+              <td>${formatPrice(market.yes_price)}</td>
+              <td>-</td>
+              <td>-</td>
+              <td><span class="tag ${decision.directionClass}">${escapeHtml(decision.direction)}</span></td>
+              <td><span class="tag ${decision.confidenceClass}">${escapeHtml(decision.confidence)}</span></td>
+              <td>${escapeHtml(decision.position)}</td>
+              <td><div class="prediction wrap-cell" style="white-space:pre-line">${escapeHtml(decision.currentPrediction)}</div></td>
+              <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
+              <td><div class="reason">${escapeHtml(decision.reason)}</div></td>
+            </tr>
+          `);
+        }
       });
 
       let html = "";
       if (activeRows.length === 0) {
-        html += `<tr><td colspan="13"><div class="empty">当前没有与最新采集天气日期匹配的正式市场。</div></td></tr>`;
+        html += `<tr><td colspan="12"><div class="empty">当前没有与最新采集天气日期匹配的正式市场。</div></td></tr>`;
       } else {
         html += activeRows.join("");
       }
       if (expiredCount > 0) {
-        html += `<tr style="border-top: 2px solid rgba(255,191,105,0.3);"><td colspan="13" style="padding:8px 12px;color:var(--warn);font-size:12px;background:rgba(255,191,105,0.05);">`;
+        html += `<tr style="border-top: 2px solid rgba(255,191,105,0.3);"><td colspan="12" style="padding:8px 12px;color:var(--warn);font-size:12px;background:rgba(255,191,105,0.05);">`;
         html += `已隐藏 ${expiredCount} 条过期 markets.json 配置，可更新或移除旧市场。`;
         html += `</td></tr>`;
       }
@@ -868,6 +901,90 @@
         minSpread,
         maxSpread,
         sourceSpread: Math.max(minSpread, maxSpread)
+      };
+    }
+
+    function buildLiveProbabilityDecision(market) {
+      const lp = state.liveProbability;
+      if (!lp) return null;
+      if (market.city !== "香港") return null;
+      if (market.forecast_date !== lp.local_date) return null;
+
+      // Match market threshold + condition to probability bucket
+      const marketThreshold = Number(market.threshold);
+      const probEntry = lp.probabilities.find(
+        (p) => Number(p.threshold) === marketThreshold && p.condition === market.condition
+      );
+      if (!probEntry) return null;
+
+      const modelProb = probEntry.probability;
+      const yesPrice = Number(market.yes_price) || 0;
+      const edge = modelProb - yesPrice;
+
+      // Decision rules based on edge
+      let direction, directionClass, confidence, confidenceClass, position;
+      if (edge >= 0.10) {
+        direction = "偏 YES"; directionClass = "yes";
+        confidence = "高"; confidenceClass = "yes";
+        position = "小仓";
+      } else if (edge >= 0.05) {
+        direction = "轻微偏 YES"; directionClass = "yes";
+        confidence = "中"; confidenceClass = "neutral";
+        position = "观察 / 极小仓";
+      } else if (edge > -0.05) {
+        direction = "暂不交易"; directionClass = "neutral";
+        confidence = "低"; confidenceClass = "no";
+        position = "0，不交易";
+      } else if (edge <= -0.10) {
+        direction = "偏 NO"; directionClass = "no";
+        confidence = "高"; confidenceClass = "yes";
+        position = "小仓";
+      } else {
+        direction = "轻微偏 NO"; directionClass = "no";
+        confidence = "中"; confidenceClass = "neutral";
+        position = "观察 / 极小仓";
+      }
+
+      const modelPct = (modelProb * 100).toFixed(2);
+      const edgePct = (edge >= 0 ? "+" : "") + (edge * 100).toFixed(2);
+      const edgeStr = edgePct + "%";
+      const modelProbability = modelPct + "%";
+
+      const distanceToLine = "-";
+      const tooClose = false;
+      const sourceCount = lp.forecast_sources ? lp.forecast_sources.length : 0;
+      const spread = lp.model_parameters ? formatTemp(lp.model_parameters.source_spread) : "-";
+
+      const currentPrediction = [
+        lp.today_max_temp != null ? `当前最高温：${formatTemp(lp.today_max_temp)}` : "",
+        lp.current_temp != null ? `当前温度：${formatTemp(lp.current_temp)}` : "",
+        `已实现档位：${lp.achieved_bucket || "-"}`,
+        lp.model_parameters ? `模型中心：${formatTemp(lp.model_parameters.model_center)}` : "",
+      ].filter(Boolean).join("\n");
+
+      const reasonParts = [];
+      if (direction === "暂不交易") {
+        reasonParts.push(`Edge ${edgeStr} 在 -5%~5% 之间，无显著偏离`);
+      } else {
+        reasonParts.push(`模型概率 ${modelPct}%，YES 价格 ${(yesPrice*100).toFixed(1)}%，Edge ${edgeStr}`);
+      }
+      reasonParts.push(`no_new_high = ${(lp.model_parameters?.no_new_high_probability * 100).toFixed(1)}%`);
+      reasonParts.push(lp.warnings?.join("; ") || "");
+
+      return {
+        currentPrediction,
+        modelProbability,
+        edgeStr,
+        sourceCount,
+        sourceSpread: spread,
+        distanceToLine,
+        tooClose,
+        direction,
+        directionClass,
+        confidence,
+        confidenceClass,
+        position,
+        reason: reasonParts.filter(Boolean).join(" | ")
       };
     }
 
