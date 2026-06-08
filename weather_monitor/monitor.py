@@ -195,15 +195,18 @@ def _fetch_hko_today_from_cache(fetched_at: str, forecast_run_label: str) -> For
     if cache_entry.forecast_date != today_hk:
         return None
 
+    # Use cache's captured_at so chart x-axis reflects real HKO fetch time,
+    # not the current Weather Monitor run time.  Same cache → same point.
+    cache_captured_at = cache_entry.captured_at or fetched_at
     return ForecastRecord(
-        fetched_at=fetched_at,
+        fetched_at=cache_captured_at,
         forecast_run_label=forecast_run_label,
         city="香港",
         source="香港天文台-今日预测",
         forecast_date=today_hk,
         temp_min=None,  # cache has no min temp
         temp_max=cache_entry.forecast_high,
-        data_update_time=cache_entry.update_time or fetched_at,
+        data_update_time=cache_entry.update_time or cache_captured_at,
     )
 
 

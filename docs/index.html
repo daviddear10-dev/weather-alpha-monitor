@@ -1018,16 +1018,21 @@
           fill: false
         });
 
-        minDatasets.push({
-          label: `${series.city} · ${series.source}`,
-          data: sorted.map((p) => ({ x: p.x, y: p.y_min, city: p.city, source: p.source, forecast_date: p.forecast_date })),
-          borderColor: color,
-          backgroundColor: color + "22",
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          tension: 0.28,
-          fill: false
-        });
+        // Only include in min chart if at least one valid (non-NaN) min_temp point
+        const minData = sorted.map((p) => ({ x: p.x, y: p.y_min, city: p.city, source: p.source, forecast_date: p.forecast_date }));
+        const validMinPoints = minData.filter((p) => Number.isFinite(p.y));
+        if (validMinPoints.length > 0) {
+          minDatasets.push({
+            label: `${series.city} · ${series.source}`,
+            data: minData,
+            borderColor: color,
+            backgroundColor: color + "22",
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            tension: 0.28,
+            fill: false
+          });
+        }
       });
 
             state.maxChart = drawMultiChart(
@@ -1037,13 +1042,24 @@
         "预测最高温（℃）",
         "预测最高温"
       );
-            state.minChart = drawMultiChart(
-        state.minChart,
-        "minChart",
-        minDatasets,
-        "预测最低温（℃）",
-        "预测最低温"
-      );
+      if (minDatasets.length > 0) {
+        state.minChart = drawMultiChart(
+          state.minChart,
+          "minChart",
+          minDatasets,
+          "预测最低温（℃）",
+          "预测最低温"
+        );
+      } else {
+        if (state.minChart) { state.minChart.destroy(); state.minChart = null; }
+        const minCanvas = document.querySelector("#minChart");
+        const minCtx = minCanvas.getContext("2d");
+        minCtx.clearRect(0, 0, minCanvas.width, minCanvas.height);
+        minCtx.fillStyle = "#9aa8c7";
+        minCtx.font = "14px sans-serif";
+        minCtx.textAlign = "center";
+        minCtx.fillText("当前筛选条件下暂无最低温数据", minCanvas.width / 2, minCanvas.height / 2);
+      }
     }
 
     function drawMultiChart(existingChart, canvasId, datasets, yUnit, tooltipMetricName) {
