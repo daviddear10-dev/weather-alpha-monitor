@@ -392,6 +392,9 @@
         <h2>Polymarket 决策建议</h2>
         <span class="hint">正式市场来自 markets.json；过期或无天气匹配的配置不会生成交易建议</span>
       </div>
+
+      <div id="hkProbabilityCard" style="margin-bottom:12px;"></div>
+
       <div class="table-wrap">
         <table class="market-table">
           <colgroup>
@@ -691,7 +694,83 @@
       document.querySelector("#batchTable").innerHTML = rows.join("") || `<tr><td colspan="6"><div class="empty">当前筛选没有批次数据。</div></td></tr>`;
     }
 
+    function renderHKProbabilityCard() {
+      const card = document.querySelector("#hkProbabilityCard");
+      const lp = state.liveProbability;
+      if (!lp) {
+        card.innerHTML = `<div class="empty">暂无香港实时概率数据，等待自动任务生成。</div>`;
+        return;
+      }
+
+      const capturedShort = lp.captured_at
+        ? new Date(lp.captured_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
+        : "-";
+
+      const sourcesHTML = (lp.forecast_sources || []).map((s) => {
+        const src = escapeHtml(s.source);
+        const high = s.forecast_high != null ? s.forecast_high + "°C" : "-";
+        if (s.from_cache) {
+          return `<div style="font-size:13px;">${src} ${high} <span style="color:var(--muted);font-size:11px;">(缓存)</span></div>`;
+        }
+        return `<div style="font-size:13px;">${src} ${high}</div>`;
+      }).join("");
+
+      const topProbs = (lp.probabilities || [])
+        .filter((p) => p.probability >= 0.01)
+        .sort((a, b) => b.probability - a.probability)
+        .map((p) => {
+          const pct = (p.probability * 100).toFixed(2);
+          const bucket = escapeHtml(p.bucket);
+          const color = p.probability >= 0.30 ? "var(--accent)" : p.probability >= 0.10 ? "var(--warn)" : "var(--muted)";
+          return `<span style="display:inline-block;margin:2px 8px 2px 0;color:${color};font-size:13px;"><b>${bucket}</b> ${pct}%</span>`;
+        }).join("");
+
+      const warningText = lp.warnings && lp.warnings.length > 0
+        ? lp.warnings[0]
+        : "启发式模型，仅供参考，不构成交易建议。";
+
+      card.innerHTML = `
+        <div style="background:var(--card-bg, #1a1e2e);border:1px solid var(--border, #2a3040);
+                    border-radius:10px;padding:14px 18px;">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;margin-bottom:12px;">
+            <h3 style="margin:0;font-size:16px;">香港实时最高温概率</h3>
+            <span style="font-size:12px;color:var(--muted);">最后更新 ${escapeHtml(capturedShort)}</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px 16px;">
+            <div>
+              <div style="font-size:11px;color:var(--muted);">当前温度</div>
+              <div style="font-size:14px;font-weight:600;">${lp.current_temp != null ? lp.current_temp + "°C" : "-"}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);">今日已实现最高温</div>
+              <div style="font-size:14px;font-weight:600;">${lp.today_max_temp != null ? lp.today_max_temp + "°C" : "-"}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);">已实现档位</div>
+              <div style="font-size:14px;font-weight:600;">${escapeHtml(lp.achieved_bucket || "-")}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);">模型中心</div>
+              <div style="font-size:14px;font-weight:600;">${lp.model_parameters ? lp.model_parameters.model_center + "°C" : "-"}</div>
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted);">预测源</div>
+              <div>${sourcesHTML || "-"}</div>
+            </div>
+          </div>
+          <div style="margin-top:10px;">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">主要概率</div>
+            <div>${topProbs || "-"}</div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;">
+            ${escapeHtml(warningText)}
+          </div>
+        </div>
+      `;
+    }
+
     function renderMarketTable() {
+      renderHKProbabilityCard();
       if (!state.marketsLoaded) {
         document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">加载中…</div></td></tr>`;
         return;
