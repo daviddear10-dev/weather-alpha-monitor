@@ -721,7 +721,7 @@
           .map((item) => `${item.city}|${item.forecast_date}`)
       );
 
-      const activeRows = [];
+      const activeItems = [];
       let expiredCount = 0;
 
       state.markets.forEach((market) => {
@@ -739,8 +739,7 @@
         const lpDecision = buildLiveProbabilityDecision(market);
 
         if (lpDecision) {
-          const lp = state.liveProbability;
-          activeRows.push(`
+          const html = `
             <tr>
               <td>${escapeHtml(market.city)}</td>
               <td>${escapeHtml(market.forecast_date)}</td>
@@ -755,7 +754,13 @@
               <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
               <td><div class="reason">${escapeHtml(lpDecision.reason)}</div></td>
             </tr>
-          `);
+          `;
+          activeItems.push({
+            html,
+            tradeRank: lpDecision.tradeRank,
+            edgeAbs: Math.abs(lpDecision.edgeValue),
+            threshold: Number(market.threshold)
+          });
         } else {
           const decision = buildMarketDecision(market, prediction);
           decision.reason = [
@@ -763,7 +768,7 @@
             decision.sourceCount ? `数据源数量：${decision.sourceCount}` : "",
             decision.sourceSpread !== "-" ? `数据源分歧：${decision.sourceSpread}` : "",
           ].filter(Boolean).join(" | ");
-          activeRows.push(`
+          const html = `
             <tr>
               <td>${escapeHtml(market.city)}</td>
               <td>${escapeHtml(market.forecast_date)}</td>
@@ -778,9 +783,24 @@
               <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
               <td><div class="reason">${escapeHtml(decision.reason)}</div></td>
             </tr>
-          `);
+          `;
+          activeItems.push({
+            html,
+            tradeRank: 3,
+            edgeAbs: 0,
+            threshold: Number(market.threshold)
+          });
         }
       });
+
+      // Sort: tradeRank asc, edgeAbs desc, threshold asc
+      activeItems.sort((a, b) => {
+        if (a.tradeRank !== b.tradeRank) return a.tradeRank - b.tradeRank;
+        if (a.edgeAbs !== b.edgeAbs) return b.edgeAbs - a.edgeAbs;
+        return a.threshold - b.threshold;
+      });
+
+      const activeRows = activeItems.map((item) => item.html);
 
       let html = "";
       if (activeRows.length === 0) {
@@ -971,10 +991,22 @@
       reasonParts.push(`no_new_high = ${(lp.model_parameters?.no_new_high_probability * 100).toFixed(1)}%`);
       reasonParts.push(lp.warnings?.join("; ") || "");
 
+      // Compute trade rank for sorting
+      let tradeRank;
+      if (direction === "暂不交易") {
+        tradeRank = 2;
+      } else if (direction.startsWith("偏 ") && confidence === "高") {
+        tradeRank = 0;
+      } else {
+        tradeRank = 1;
+      }
+
       return {
         currentPrediction,
         modelProbability,
         edgeStr,
+        edgeValue: edge,
+        tradeRank,
         sourceCount,
         sourceSpread: spread,
         distanceToLine,
