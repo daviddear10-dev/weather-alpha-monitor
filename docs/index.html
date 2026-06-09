@@ -571,28 +571,35 @@
     forecastDateFilter.addEventListener("change", render);
 
     function setupFilters(data) {
-      unique(data.map((item) => item.city)).forEach((city) => {
+      const hongKongToday = getHongKongTodayISO();
+      unique(data.filter((item) => item.city === "香港").map((item) => item.city)).forEach((city) => {
         cityFilter.append(new Option(city, city));
       });
-      unique(data.map((item) => item.source)).forEach((source) => {
+      unique(data.filter((item) => item.city === "香港").map((item) => item.source)).forEach((source) => {
         sourceFilter.append(new Option(source, source));
       });
       forecastDateFilter.append(new Option("全部预报日期", ""));
-      const forecastDates = unique(data.map((item) => item.forecast_date)).sort().reverse();
+      const forecastDates = unique(data.filter((item) => item.city === "香港").map((item) => item.forecast_date)).sort().reverse();
       forecastDates.forEach((date) => {
         forecastDateFilter.append(new Option(date, date));
       });
-      if (forecastDates.length > 0) {
+      if (forecastDates.includes(hongKongToday)) {
+        forecastDateFilter.value = hongKongToday;
+      } else if (forecastDates.length > 0) {
         forecastDateFilter.value = forecastDates[0];
+      }
+      if (cityFilter.querySelector('option[value="香港"]')) {
+        cityFilter.value = "香港";
       }
     }
 
     function render() {
       const filtered = state.data.filter((item) => {
-        return (!forecastDateFilter.value || item.forecast_date === forecastDateFilter.value)
+        return isHongKongTradingWindowRecord(item)
+          && (!forecastDateFilter.value || item.forecast_date === forecastDateFilter.value)
           && (!cityFilter.value || item.city === cityFilter.value)
           && (!sourceFilter.value || item.source === sourceFilter.value);
-      });
+      }).sort((a, b) => new Date(b.fetched_at || b.captured_at) - new Date(a.fetched_at || a.captured_at));
       renderStats(filtered);
       renderRecords(filtered);
       renderBatchTable(filtered);
@@ -635,7 +642,7 @@
           <td>${escapeHtml(item.update_time)}</td>
         </tr>
       `);
-      document.querySelector("#recordsTable").innerHTML = rows.join("") || `<tr><td colspan="8"><div class="empty">当前筛选没有记录。</div></td></tr>`;
+      document.querySelector("#recordsTable").innerHTML = rows.join("") || `<tr><td colspan="8"><div class="empty">当前日期 09:00–13:59 暂无交易时段数据。</div></td></tr>`;
     }
 
     function renderBatchTable(data) {
@@ -1023,6 +1030,50 @@
         month: "2-digit",
         day: "2-digit"
       }).format(new Date());
+    }
+
+    function getHongKongDateParts(dateValue) {
+      if (!dateValue) return null;
+      const date = new Date(dateValue);
+      if (Number.isNaN(date.getTime())) return null;
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Hong_Kong",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+      }).formatToParts(date);
+      const values = Object.fromEntries(
+        parts
+          .filter((part) => part.type !== "literal")
+          .map((part) => [part.type, part.value])
+      );
+      let hour = Number(values.hour);
+      let isoDate = `${values.year}-${values.month}-${values.day}`;
+      if (hour === 24) {
+        hour = 0;
+      }
+      return {
+        year: Number(values.year),
+        month: Number(values.month),
+        day: Number(values.day),
+        hour,
+        minute: Number(values.minute),
+        second: Number(values.second),
+        isoDate
+      };
+    }
+
+    function isHongKongTradingWindowRecord(record) {
+      if (!record || record.city !== "香港") return false;
+      const capturedAt = record.fetched_at || record.captured_at;
+      const parts = getHongKongDateParts(capturedAt);
+      if (!parts) return false;
+      if (record.forecast_date !== parts.isoDate) return false;
+      return parts.hour >= 9 && parts.hour < 14;
     }
 
     function isLiveProbabilityCurrent() {
