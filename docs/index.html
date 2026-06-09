@@ -74,6 +74,7 @@
     .charts {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       margin-top: 16px;
+      align-items: stretch;
     }
 
     .card {
@@ -139,7 +140,9 @@
     }
 
     .charts .section {
-      min-height: 430px;
+      min-height: 500px;
+      display: flex;
+      flex-direction: column;
     }
 
     .section-head {
@@ -147,7 +150,7 @@
       justify-content: space-between;
       gap: 14px;
       align-items: baseline;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
     }
 
     h2 {
@@ -219,7 +222,7 @@
     }
 
     .market-table {
-      min-width: 1540px;
+      min-width: 1500px;
       table-layout: fixed;
     }
 
@@ -238,12 +241,12 @@
     }
 
     .market-table .prediction {
-      min-width: 300px;
+      min-width: 280px;
       color: #dce6ff;
     }
 
     .market-table .reason {
-      min-width: 380px;
+      min-width: 340px;
       white-space: normal;
       line-height: 1.55;
       color: #cdd7ee;
@@ -251,7 +254,47 @@
 
     canvas {
       width: 100%;
-      height: 330px !important;
+      height: 360px !important;
+      flex: 1;
+      min-height: 360px;
+    }
+
+    .chart-note {
+      min-height: 34px;
+      margin-bottom: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .batch-table {
+      min-width: 760px;
+    }
+
+    .batch-table th:nth-child(3),
+    .batch-table th:nth-child(4),
+    .batch-table th:nth-child(5),
+    .batch-table td:nth-child(3),
+    .batch-table td:nth-child(4),
+    .batch-table td:nth-child(5) {
+      text-align: right;
+    }
+
+    .batch-table td {
+      padding-top: 10px;
+      padding-bottom: 10px;
+    }
+
+    .batch-table .max-temp {
+      color: #ffd0d0;
+      font-weight: 760;
+      font-size: 14px;
+    }
+
+    .batch-table .source-list {
+      white-space: normal;
+      line-height: 1.45;
+      color: #d7e0f5;
     }
 
     .empty {
@@ -292,7 +335,7 @@
     <header>
       <div>
         <h1>Weather Alpha Monitor</h1>
-        <p class="subtitle">多城市最高/最低温预测监控。数据来自 Open-Meteo、香港天文台、NOAA/NWS、NEA/MSS，页面由 GitHub Pages 静态展示。</p>
+        <p class="subtitle">香港最高/最低温预测监控。数据来自 Open-Meteo、香港天文台及实时观测，页面聚焦今日 Polymarket 天气判断。</p>
       </div>
       <div class="grid stats">
         <article class="card stat">
@@ -301,9 +344,9 @@
           <div class="note" id="latestBatch">批次 -</div>
         </article>
         <article class="card stat">
-          <div class="label">天气城市</div>
+          <div class="label">跟踪城市</div>
           <div class="value" id="weatherCityCount">0</div>
-          <div class="note">当前筛选范围</div>
+          <div class="note">当前只启用香港</div>
         </article>
         <article class="card stat">
           <div class="label">正式市场</div>
@@ -311,31 +354,31 @@
           <div class="note">markets.json</div>
         </article>
         <article class="card stat">
-          <div class="label">草稿市场</div>
-          <div class="value" id="draftMarketCount">0</div>
-          <div class="note">markets_draft.json</div>
-        </article>
-      </div>
-      <div class="grid stats" style="margin-top: 0;">
-        <article class="card stat">
-          <div class="label">候选市场</div>
-          <div class="value" id="candidateMarketCount">0</div>
-          <div class="note">polymarket_candidates.json</div>
-        </article>
-        <article class="card stat">
           <div class="label">记录数量</div>
           <div class="value" id="recordCount">0</div>
           <div class="note">最近 100 条导出数据</div>
         </article>
+      </div>
+      <div class="grid stats" style="margin-top: 0;">
         <article class="card stat">
           <div class="label">数据源</div>
           <div class="value" id="sourceCount">0</div>
           <div class="note">当前筛选范围</div>
         </article>
         <article class="card stat">
-          <div class="label">数据覆盖</div>
+          <div class="label">多源校验</div>
           <div class="value" id="sourceCoverage">-</div>
-          <div class="note">多源城市 / 总城市</div>
+          <div class="note">香港数据源覆盖</div>
+        </article>
+        <article class="card stat">
+          <div class="label">目标日期</div>
+          <div class="value" id="targetDateStat">-</div>
+          <div class="note">当前筛选</div>
+        </article>
+        <article class="card stat">
+          <div class="label">面板用途</div>
+          <div class="value" style="font-size:20px;">决策</div>
+          <div class="note">天气预测 + 实时概率 + Edge</div>
         </article>
       </div>
     </header>
@@ -360,13 +403,58 @@
       </label>
     </section>
 
+    <section class="card section" style="margin-top: 16px;">
+      <div class="section-head">
+        <h2>Polymarket 决策建议</h2>
+        <span class="hint">正式市场来自 markets.json；过期或无天气匹配的配置不会生成交易建议</span>
+      </div>
+
+      <div id="hkProbabilityCard" style="margin-bottom:18px;"></div>
+
+      <div class="table-wrap">
+        <table class="market-table">
+          <colgroup>
+            <col style="width: 70px;">
+            <col style="width: 108px;">
+            <col style="width: 112px;">
+            <col style="width: 86px;">
+            <col style="width: 110px;">
+            <col style="width: 82px;">
+            <col style="width: 92px;">
+            <col style="width: 76px;">
+            <col style="width: 104px;">
+            <col style="width: 280px;">
+            <col style="width: 260px;">
+            <col style="width: 340px;">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>城市</th>
+              <th>预报日期</th>
+              <th>建议方向</th>
+              <th>置信度</th>
+              <th>建议仓位</th>
+              <th>YES 价格</th>
+              <th>模型概率</th>
+              <th>Edge</th>
+              <th>市场线</th>
+              <th>当前预测</th>
+              <th>市场问题</th>
+              <th>理由</th>
+            </tr>
+          </thead>
+          <tbody id="marketTable"></tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="grid charts">
       <article class="card section">
         <div class="section-head">
           <h2>目标日期最高温预测</h2>
           <span class="hint" id="maxChartHint">按抓取时间排序</span>
         </div>
-        <div class="hint" id="maxChartNote" style="margin-bottom:8px;color:var(--muted);font-size:12px;"></div>
+        <div class="chart-note" id="maxChartNote"></div>
         <canvas id="maxChart"></canvas>
       </article>
       <article class="card section">
@@ -374,7 +462,7 @@
           <h2>目标日期最低温预测</h2>
           <span class="hint" id="minChartHint">按抓取时间排序</span>
         </div>
-        <div class="hint" id="minChartNote" style="margin-bottom:8px;color:var(--muted);font-size:12px;"></div>
+        <div class="chart-note" id="minChartNote"></div>
         <canvas id="minChart"></canvas>
       </article>
     </section>
@@ -385,7 +473,7 @@
         <span class="hint">按批次和城市汇总平均温度</span>
       </div>
       <div class="table-wrap">
-        <table>
+        <table class="batch-table">
           <thead>
             <tr>
               <th>批次</th>
@@ -397,125 +485,6 @@
             </tr>
           </thead>
           <tbody id="batchTable"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card section" style="margin-top: 16px;">
-      <div class="section-head">
-        <h2>Polymarket 决策建议</h2>
-        <span class="hint">正式市场来自 markets.json；过期或无天气匹配的配置不会生成交易建议</span>
-      </div>
-
-      <div id="hkProbabilityCard" style="margin-bottom:12px;"></div>
-
-      <div class="table-wrap">
-        <table class="market-table">
-          <colgroup>
-            <col style="width: 70px;">
-            <col style="width: 110px;">
-            <col style="width: 120px;">
-            <col style="width: 80px;">
-            <col style="width: 90px;">
-            <col style="width: 90px;">
-            <col style="width: 110px;">
-            <col style="width: 80px;">
-            <col style="width: 120px;">
-            <col style="width: 230px;">
-            <col style="width: 300px;">
-            <col style="width: 360px;">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>城市</th>
-              <th>预报日期</th>
-              <th>市场线</th>
-              <th>YES 价格</th>
-              <th>模型概率</th>
-              <th>Edge</th>
-              <th>建议方向</th>
-              <th>置信度</th>
-              <th>建议仓位</th>
-              <th>当前预测</th>
-              <th>市场问题</th>
-              <th>理由</th>
-            </tr>
-          </thead>
-          <tbody id="marketTable"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card section" style="margin-top: 16px;">
-      <div class="section-head">
-        <h2>Polymarket 草稿市场</h2>
-        <span class="hint">markets_draft.json — 日期已匹配天气数据的候选市场草稿</span>
-      </div>
-      <div class="table-wrap">
-        <table class="market-table">
-          <colgroup>
-            <col style="width: 70px;">
-            <col style="width: 108px;">
-            <col style="width: 300px;">
-            <col style="width: 120px;">
-            <col style="width: 78px;">
-            <col style="width: 76px;">
-            <col style="width: 96px;">
-            <col style="width: 96px;">
-            <col style="width: 260px;">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>城市</th>
-              <th>预报日期</th>
-              <th>市场问题</th>
-              <th>市场线</th>
-              <th>条件</th>
-              <th>YES 价格</th>
-              <th>24h 成交量</th>
-              <th>流动性</th>
-              <th>链接</th>
-            </tr>
-          </thead>
-          <tbody id="draftMarketTable"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="card section" style="margin-top: 16px;">
-      <div class="section-head">
-        <h2>Polymarket 候选市场</h2>
-        <span class="hint">polymarket_candidates.json — 仅展示城市当地今天和明天的候选市场（含日期匹配状态）</span>
-      </div>
-      <div class="table-wrap">
-        <table class="market-table">
-          <colgroup>
-            <col style="width: 70px;">
-            <col style="width: 108px;">
-            <col style="width: 300px;">
-            <col style="width: 120px;">
-            <col style="width: 78px;">
-            <col style="width: 76px;">
-            <col style="width: 96px;">
-            <col style="width: 96px;">
-            <col style="width: 110px;">
-            <col style="width: 260px;">
-          </colgroup>
-          <thead>
-            <tr>
-              <th>城市</th>
-              <th>候选日期</th>
-              <th>市场问题</th>
-              <th>盘口</th>
-              <th>条件</th>
-              <th>YES 价格</th>
-              <th>24h 成交量</th>
-              <th>流动性</th>
-              <th>是否匹配天气数据</th>
-              <th>链接</th>
-            </tr>
-          </thead>
-          <tbody id="candidateMarketTable"></tbody>
         </table>
       </div>
     </section>
@@ -549,12 +518,8 @@
     const state = {
       data: [],
       markets: [],
-      draftMarkets: [],
-      candidates: [],
       liveProbability: null,
       marketsLoaded: false,
-      draftMarketsLoaded: false,
-      candidatesLoaded: false,
       liveProbabilityLoaded: false,
       maxChart: null,
       minChart: null
@@ -572,25 +537,15 @@
       fetch("markets.json", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : [])
         .catch(() => []),
-      fetch("markets_draft.json", { cache: "no-store" })
-        .then((response) => response.ok ? response.json() : [])
-        .catch(() => []),
-      fetch("polymarket_candidates.json", { cache: "no-store" })
-        .then((response) => response.ok ? response.json() : [])
-        .catch(() => []),
       fetch("hong_kong_live_probability.json", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : null)
         .catch(() => null)
     ])
-      .then(([weatherData, markets, draftMarkets, candidates, liveProb]) => {
+      .then(([weatherData, markets, liveProb]) => {
         state.data = Array.isArray(weatherData) ? weatherData : [];
         state.markets = Array.isArray(markets) ? markets : [];
-        state.draftMarkets = Array.isArray(draftMarkets) ? draftMarkets : [];
-        state.candidates = Array.isArray(candidates) ? candidates : [];
         state.liveProbability = (liveProb && typeof liveProb === 'object' && liveProb.probabilities) ? liveProb : null;
         state.marketsLoaded = true;
-        state.draftMarketsLoaded = true;
-        state.candidatesLoaded = true;
         state.liveProbabilityLoaded = true;
         setupFilters(state.data);
         render();
@@ -598,8 +553,6 @@
       .catch(() => {
         document.querySelector("#recordsTable").innerHTML = `<tr><td colspan="8"><div class="empty">暂无数据，请先运行 weather_monitor 生成 weather_data.json。</div></td></tr>`;
         document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
-        document.querySelector("#draftMarketTable").innerHTML = `<tr><td colspan="9"><div class="empty">暂无草稿市场数据。</div></td></tr>`;
-        document.querySelector("#candidateMarketTable").innerHTML = `<tr><td colspan="10"><div class="empty">暂无候选市场数据。</div></td></tr>`;
       });
 
     cityFilter.addEventListener("change", render);
@@ -633,8 +586,6 @@
       renderRecords(filtered);
       renderBatchTable(filtered);
       renderMarketTable();
-      renderDraftMarketTable();
-      renderCandidateMarketTable();
       updateChartHints();
       renderCharts(filtered);
     }
@@ -645,10 +596,9 @@
       document.querySelector("#latestBatch").textContent = latest ? `批次 ${latest.forecast_run_label}` : "批次 -";
       document.querySelector("#weatherCityCount").textContent = unique(data.map((item) => item.city)).length;
       document.querySelector("#liveMarketCount").textContent = state.markets.length;
-      document.querySelector("#draftMarketCount").textContent = state.draftMarkets.length;
-      document.querySelector("#candidateMarketCount").textContent = state.candidates.length;
       document.querySelector("#recordCount").textContent = data.length;
       document.querySelector("#sourceCount").textContent = unique(data.map((item) => item.source)).length;
+      document.querySelector("#targetDateStat").textContent = forecastDateFilter.value || "全部";
 
       const citySources = new Map();
       data.forEach((item) => {
@@ -701,8 +651,8 @@
           <td>${escapeHtml(group.city)}</td>
           <td>${group.minTemps.length}</td>
           <td>${formatTemp(avg(group.minTemps))}</td>
-          <td>${formatTemp(avg(group.maxTemps))}</td>
-          <td>${escapeHtml(Array.from(group.sources).join("、"))}</td>
+          <td class="max-temp">${formatTemp(avg(group.maxTemps))}</td>
+          <td><div class="source-list">${escapeHtml(Array.from(group.sources).join("、"))}</div></td>
         </tr>
       `);
       document.querySelector("#batchTable").innerHTML = rows.join("") || `<tr><td colspan="6"><div class="empty">当前筛选没有批次数据。</div></td></tr>`;
@@ -852,13 +802,13 @@
             <tr>
               <td>${escapeHtml(market.city)}</td>
               <td>${escapeHtml(market.forecast_date)}</td>
-              <td>${escapeHtml(formatMarketLine(market))}</td>
-              <td>${formatPrice(market.yes_price)}</td>
-              <td>${lpDecision.modelProbability}</td>
-              <td>${lpDecision.edgeStr}</td>
               <td><span class="tag ${lpDecision.directionClass}">${escapeHtml(lpDecision.direction)}</span></td>
               <td><span class="tag ${lpDecision.confidenceClass}">${escapeHtml(lpDecision.confidence)}</span></td>
               <td>${escapeHtml(lpDecision.position)}</td>
+              <td>${formatPrice(market.yes_price)}</td>
+              <td>${lpDecision.modelProbability}</td>
+              <td>${lpDecision.edgeStr}</td>
+              <td>${escapeHtml(formatMarketLine(market))}</td>
               <td><div class="prediction wrap-cell" style="white-space:pre-line">${escapeHtml(lpDecision.currentPrediction)}</div></td>
               <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
               <td><div class="reason">${escapeHtml(lpDecision.reason)}</div></td>
@@ -881,13 +831,13 @@
             <tr>
               <td>${escapeHtml(market.city)}</td>
               <td>${escapeHtml(market.forecast_date)}</td>
-              <td>${escapeHtml(formatMarketLine(market))}</td>
-              <td>${formatPrice(market.yes_price)}</td>
-              <td>-</td>
-              <td>-</td>
               <td><span class="tag ${decision.directionClass}">${escapeHtml(decision.direction)}</span></td>
               <td><span class="tag ${decision.confidenceClass}">${escapeHtml(decision.confidence)}</span></td>
               <td>${escapeHtml(decision.position)}</td>
+              <td>${formatPrice(market.yes_price)}</td>
+              <td>-</td>
+              <td>-</td>
+              <td>${escapeHtml(formatMarketLine(market))}</td>
               <td><div class="prediction wrap-cell" style="white-space:pre-line">${escapeHtml(decision.currentPrediction)}</div></td>
               <td><div class="question wrap-cell">${escapeHtml(market.market_question)}</div></td>
               <td><div class="reason">${escapeHtml(decision.reason)}</div></td>
@@ -924,81 +874,6 @@
       }
 
       document.querySelector("#marketTable").innerHTML = html;
-    }
-
-    function renderDraftMarketTable() {
-      if (!state.draftMarketsLoaded) {
-        document.querySelector("#draftMarketTable").innerHTML = `<tr><td colspan="9"><div class="empty">加载中…</div></td></tr>`;
-        return;
-      }
-      if (state.draftMarkets.length === 0) {
-        document.querySelector("#draftMarketTable").innerHTML = `<tr><td colspan="9"><div class="empty">暂无日期匹配的草稿市场。等 Polymarket 候选市场日期与天气数据日期匹配后会出现在这里。</div></td></tr>`;
-        return;
-      }
-
-      const rows = state.draftMarkets.map((market) => {
-        const marketLine = `${(market.metric === "min_temp" ? "最低温" : "最高温")} ${market.condition || ">="} ${formatTemp(market.threshold)}`;
-        const url = market.url ? `<a href="${escapeHtml(market.url)}" target="_blank" rel="noopener">查看</a>` : "-";
-        return `
-          <tr>
-            <td>${escapeHtml(market.city)}</td>
-            <td>${escapeHtml(market.forecast_date)}</td>
-            <td><div class="wrap-cell" style="min-width:260px;">${escapeHtml(market.market_question)}</div></td>
-            <td>${escapeHtml(marketLine)}</td>
-            <td>${escapeHtml(market.condition || "-")}</td>
-            <td>${formatPrice(market.yes_price)}</td>
-            <td>$${formatNumber(market.volume24hr || 0)}</td>
-            <td>$${formatNumber(market.liquidity || 0)}</td>
-            <td>${url}</td>
-          </tr>
-        `;
-      });
-      document.querySelector("#draftMarketTable").innerHTML = rows.join("");
-    }
-
-    function renderCandidateMarketTable() {
-      if (!state.candidatesLoaded) {
-        document.querySelector("#candidateMarketTable").innerHTML = `<tr><td colspan="10"><div class="empty">加载中…</div></td></tr>`;
-        return;
-      }
-      if (state.candidates.length === 0) {
-        document.querySelector("#candidateMarketTable").innerHTML = `<tr><td colspan="10"><div class="empty">暂无候选市场数据。</div></td></tr>`;
-        return;
-      }
-
-      const weatherCityDates = new Set();
-      state.data.forEach((item) => {
-        if (item.city && item.forecast_date) {
-          weatherCityDates.add(`${item.city}|${item.forecast_date}`);
-        }
-      });
-
-      const rows = state.candidates.map((candidate) => {
-        const key = `${candidate.city || ""}|${candidate.forecast_date || ""}`;
-        const isMatched = weatherCityDates.has(key);
-        const matchTag = isMatched
-          ? `<span class="tag yes">匹配</span>`
-          : `<span class="tag neutral">日期不匹配</span>`;
-        const marketLine = candidate.threshold != null
-          ? `${(candidate.metric === "min_temp" ? "最低温" : "最高温")} ${candidate.condition || ">="} ${formatTemp(candidate.threshold)}`
-          : "-";
-        const url = candidate.url ? `<a href="${escapeHtml(candidate.url)}" target="_blank" rel="noopener">查看</a>` : "-";
-        return `
-          <tr>
-            <td>${escapeHtml(candidate.city)}</td>
-            <td>${escapeHtml(candidate.forecast_date)}</td>
-            <td><div class="wrap-cell" style="min-width:260px;">${escapeHtml(candidate.market_question)}</div></td>
-            <td>${escapeHtml(marketLine)}</td>
-            <td>${escapeHtml(candidate.condition || "-")}</td>
-            <td>${formatPrice(candidate.yes_price)}</td>
-            <td>$${formatNumber(candidate.volume24hr || 0)}</td>
-            <td>$${formatNumber(candidate.liquidity || 0)}</td>
-            <td>${matchTag}</td>
-            <td>${url}</td>
-          </tr>
-        `;
-      });
-      document.querySelector("#candidateMarketTable").innerHTML = rows.join("");
     }
 
     function buildPredictionSummary(city, forecastDate) {
