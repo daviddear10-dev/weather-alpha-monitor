@@ -12,8 +12,10 @@ import requests
 
 from .hong_kong_realtime import fetch_hong_kong_realtime
 from .hong_kong_probability import (
-    BUCKETS,
     HongKongProbabilityInput,
+    TemperatureBucket,
+    bucket_for_temp,
+    build_temperature_buckets,
     compute_probabilities,
 )
 from .hong_kong_forecast_cache import load_forecast_cache
@@ -35,6 +37,11 @@ def main() -> None:
 
     print("香港实时最高温概率采集")
     print(f"香港当地时间: {now_hk.isoformat(timespec='seconds')}")
+    print()
+
+    market_bucket_source, market_buckets = _load_market_buckets(today_str)
+    print(f"市场档位来源: {market_bucket_source}")
+    print("市场档位: " + ", ".join(bucket.bucket for bucket in market_buckets))
     print()
 
     # ── Step 1: real-time observation ──
@@ -86,7 +93,7 @@ def main() -> None:
         settlement_station="香港天文台",
     )
 
-    result = compute_probabilities(inp)
+    result = compute_probabilities(inp, buckets=market_buckets)
 
     # Validate probability sum
     prob_sum = sum(result.probabilities.values())
@@ -95,31 +102,8 @@ def main() -> None:
         sys.exit(1)
 
     # ── Step 4: build JSON payload ──
-    def bucket_for(temp: float) -> str:
-        for name, lo, hi in BUCKETS:
-            if lo is None and temp <= hi:
-                return name
-            if hi is None and temp >= lo:
-                return name
-            if lo is not None and hi is not None and lo <= temp < hi:
-                return name
-        return "34°C or higher"
-
-    def bucket_info(name: str) -> dict:
-        for n, lo, hi in BUCKETS:
-            if n == name:
-                if lo is None:
-                    return {"bucket": name, "condition": "<=", "threshold": int(hi) if hi else None}
-                if hi is None:
-                    return {"bucket": name, "condition": ">=", "threshold": round(lo) if lo is not None else None}
-                return {"bucket": name, "condition": "=", "threshold": round((lo + hi) / 2)}
-        return {"bucket": name, "condition": "=", "threshold": None}
-
-    probabilities_list = []
-    for name in [b[0] for b in BUCKETS]:
-        info = bucket_info(name)
-        info["probability"] = round(result.probabilities.get(name, 0.0), 6)
-        probabilities_list.append(info)
+    probabilities_list = _build_probability_rows(result.probabilities, result.buckets)
+    output_prob_sum = round(sum(row["probability"] for row in probabilities_list), 6)
 
     payload = {
         "city": "香港",
@@ -130,7 +114,7 @@ def main() -> None:
         "settlement_station": obs.settlement_station,
         "current_temp": obs.current_temp,
         "today_max_temp": achieved_max,
-        "achieved_bucket": bucket_for(achieved_max),
+        "achieved_bucket": bucket_for_temp(achieved_max, result.buckets),
         "observed_at": obs.observed_at,
         "max_temp_updated_at": obs.max_temp_updated_at,
         "forecast_sources": forecast_sources,
@@ -143,7 +127,7 @@ def main() -> None:
             "remaining_upside_probability": round(result.remaining_upside_probability, 6),
         },
         "probabilities": probabilities_list,
-        "probability_sum": round(prob_sum, 6),
+        "probability_sum": output_prob_sum,
         "warnings": [result.warning],
     }
 
@@ -168,7 +152,64 @@ def main() -> None:
     print(f"✓ 已导出到 {JSON_OUTPUT}")
     print(f"  model_center: {result.model_center:.2f}℃")
     print(f"  no_new_high_probability: {result.no_new_high_probability:.4f}")
-    print(f"  probability_sum: {prob_sum:.6f}")
+    print(f"  probability_sum: {output_prob_sum:.6f}")
+
+
+def _load_market_buckets(today_str: str) -> tuple[str, list[TemperatureBucket]]:
+    for path_text in ["docs/markets_draft.json", "docs/markets.json"]:
+        path = Path(path_text)
+        rows = _load_market_rows(path, today_str)
+        if not rows:
+            continue
+        try:
+            return path_text, build_temperature_buckets(rows)
+        except ValueError as exc:
+            print(f"{path_text} 市场档位无效：{exc}", file=sys.stderr)
+            sys.exit(1)
+
+    print("未找到香港今日 Polymarket 最高温市场档位，不写入 JSON", file=sys.stderr)
+    sys.exit(1)
+
+
+def _load_market_rows(path: Path, today_str: str) -> list[dict]:
+    if not path.exists():
+        return []
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"{path} 读取失败：{exc}", file=sys.stderr)
+        return []
+    if not isinstance(data, list):
+        print(f"{path} 不是 JSON 数组", file=sys.stderr)
+        return []
+    return [
+        item
+        for item in data
+        if isinstance(item, dict)
+        and item.get("city") == "香港"
+        and item.get("forecast_date") == today_str
+        and item.get("metric") == "max_temp"
+    ]
+
+
+def _build_probability_rows(
+    probabilities: dict[str, float],
+    buckets: list[TemperatureBucket],
+) -> list[dict]:
+    rows = []
+    for bucket in buckets:
+        rows.append({
+            "bucket": bucket.bucket,
+            "condition": bucket.condition,
+            "threshold": bucket.threshold,
+            "probability": round(probabilities.get(bucket.bucket, 0.0), 6),
+        })
+
+    delta = round(1.0 - sum(row["probability"] for row in rows), 6)
+    if rows and delta:
+        target = max(rows, key=lambda row: row["probability"])
+        target["probability"] = round(target["probability"] + delta, 6)
+    return rows
 
 
 def _fetch_open_meteo_today_max(session: requests.Session) -> float | None:

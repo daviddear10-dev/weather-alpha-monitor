@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
+from typing import Any
 
 BUCKETS = [
     ("24°C or below", None, 24.5),
@@ -18,19 +19,130 @@ BUCKETS = [
 ]
 
 
-def bucket_for_temp(temp: float) -> str:
-    """Return the bucket name that a given temperature falls into."""
-    for name, lo, hi in BUCKETS:
-        if lo is None:
-            if temp <= hi:
-                return name
-        elif hi is None:
-            if temp >= lo:
-                return name
+@dataclass(frozen=True)
+class TemperatureBucket:
+    bucket: str
+    condition: str
+    threshold: float
+    lo: float | None
+    hi: float | None
+
+
+def default_temperature_buckets() -> list[TemperatureBucket]:
+    return [
+        TemperatureBucket("24°C or below", "<=", 24.0, None, 24.5),
+        TemperatureBucket("25°C", "=", 25.0, 24.5, 25.5),
+        TemperatureBucket("26°C", "=", 26.0, 25.5, 26.5),
+        TemperatureBucket("27°C", "=", 27.0, 26.5, 27.5),
+        TemperatureBucket("28°C", "=", 28.0, 27.5, 28.5),
+        TemperatureBucket("29°C", "=", 29.0, 28.5, 29.5),
+        TemperatureBucket("30°C", "=", 30.0, 29.5, 30.5),
+        TemperatureBucket("31°C", "=", 31.0, 30.5, 31.5),
+        TemperatureBucket("32°C", "=", 32.0, 31.5, 32.5),
+        TemperatureBucket("33°C", "=", 33.0, 32.5, 33.5),
+        TemperatureBucket("34°C or higher", ">=", 34.0, 33.5, None),
+    ]
+
+
+def build_temperature_buckets(market_rows: list[dict[str, Any]]) -> list[TemperatureBucket]:
+    """Build a complete mutually-exclusive set of integer temperature buckets."""
+    by_combo: set[tuple[float, str]] = set()
+    below: list[float] = []
+    exact: list[float] = []
+    above: list[float] = []
+
+    for index, row in enumerate(market_rows, start=1):
+        condition = str(row.get("condition"))
+        threshold = _require_integer_threshold(row.get("threshold"), index)
+        combo = (threshold, condition)
+        if combo in by_combo:
+            raise ValueError(f"重复温度档位：{condition} {threshold:g}")
+        by_combo.add(combo)
+
+        if condition == "<=":
+            below.append(threshold)
+        elif condition == "=":
+            exact.append(threshold)
+        elif condition == ">=":
+            above.append(threshold)
         else:
-            if lo <= temp < hi:
-                return name
-    return "34°C or higher"
+            raise ValueError(f"不支持的市场条件：{condition}")
+
+    if len(below) != 1:
+        raise ValueError("市场档位必须且只能包含一个 <= 档位")
+    if len(above) != 1:
+        raise ValueError("市场档位必须且只能包含一个 >= 档位")
+
+    low = below[0]
+    high = above[0]
+    if high <= low:
+        raise ValueError(">= 档位 threshold 必须大于 <= 档位 threshold")
+
+    expected_exact = [float(t) for t in range(int(low) + 1, int(high))]
+    if sorted(exact) != expected_exact:
+        raise ValueError(
+            f"中间精确温度档位必须连续：期望 {expected_exact}，实际 {sorted(exact)}"
+        )
+
+    buckets = [temperature_bucket("<=", low)]
+    buckets.extend(temperature_bucket("=", threshold) for threshold in expected_exact)
+    buckets.append(temperature_bucket(">=", high))
+    return buckets
+
+
+def temperature_bucket(condition: str, threshold: float) -> TemperatureBucket:
+    if condition == "<=":
+        return TemperatureBucket(
+            f"{int(threshold)}°C or below",
+            condition,
+            threshold,
+            None,
+            threshold + 0.5,
+        )
+    if condition == "=":
+        return TemperatureBucket(
+            f"{int(threshold)}°C",
+            condition,
+            threshold,
+            threshold - 0.5,
+            threshold + 0.5,
+        )
+    if condition == ">=":
+        return TemperatureBucket(
+            f"{int(threshold)}°C or higher",
+            condition,
+            threshold,
+            threshold - 0.5,
+            None,
+        )
+    raise ValueError(f"不支持的市场条件：{condition}")
+
+
+def _require_integer_threshold(value: Any, index: int) -> float:
+    try:
+        threshold = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"第 {index} 条 threshold 不是数字") from exc
+    if not threshold.is_integer():
+        raise ValueError(f"第 {index} 条 threshold 必须是整数温度")
+    return threshold
+
+
+def bucket_for_temp(temp: float, buckets: list[TemperatureBucket] | None = None) -> str:
+    """Return the bucket name that a given temperature falls into."""
+    specs = buckets or default_temperature_buckets()
+    for bucket in specs:
+        if _contains_temp(bucket, temp):
+            return bucket.bucket
+    return specs[-1].bucket
+
+
+def _contains_temp(bucket: TemperatureBucket, temp: float) -> bool:
+    if bucket.lo is None:
+        return bucket.hi is not None and temp < bucket.hi
+    if bucket.hi is None:
+        return temp >= bucket.lo
+    return bucket.lo <= temp < bucket.hi
 
 
 @dataclass
@@ -56,11 +168,16 @@ class HongKongProbabilityResult:
     no_new_high_probability: float = 0.0
     remaining_upside_probability: float = 0.0
     probabilities: dict[str, float] = field(default_factory=dict)
+    buckets: list[TemperatureBucket] = field(default_factory=default_temperature_buckets)
     model_version: str = "hk-max-v1-heuristic"
     warning: str = "未经历史数据校准，仅为启发式模型估计"
 
 
-def compute_probabilities(inp: HongKongProbabilityInput) -> HongKongProbabilityResult:
+def compute_probabilities(
+    inp: HongKongProbabilityInput,
+    buckets: list[TemperatureBucket] | None = None,
+) -> HongKongProbabilityResult:
+    bucket_specs = buckets or default_temperature_buckets()
     achieved = inp.achieved_max_temp
     forecast_highs = inp.forecast_highs
     hour = inp.local_hour
@@ -75,8 +192,8 @@ def compute_probabilities(inp: HongKongProbabilityInput) -> HongKongProbabilityR
     remaining = 1.0 - no_new_high
 
     # Build probability dict, start with no_new_high going to achieved bucket
-    achieved_bucket = bucket_for_temp(achieved)
-    probs = {name: 0.0 for name, _, _ in BUCKETS}
+    achieved_bucket = bucket_for_temp(achieved, bucket_specs)
+    probs = {bucket.bucket: 0.0 for bucket in bucket_specs}
     probs[achieved_bucket] = no_new_high
 
     if remaining > 0:
@@ -84,9 +201,9 @@ def compute_probabilities(inp: HongKongProbabilityInput) -> HongKongProbabilityR
         center, sigma = _compute_conditional_params(inp, forecast_mean)
 
         raw_upside = {}
-        for name, lo, hi in BUCKETS:
-            raw_upside[name] = _trunc_normal_above(
-                lo, hi, center, sigma, achieved
+        for bucket in bucket_specs:
+            raw_upside[bucket.bucket] = _trunc_normal_above(
+                bucket.lo, bucket.hi, center, sigma, achieved
             )
 
         total_upside = sum(raw_upside.values())
@@ -106,6 +223,7 @@ def compute_probabilities(inp: HongKongProbabilityInput) -> HongKongProbabilityR
         no_new_high_probability=no_new_high,
         remaining_upside_probability=remaining,
         probabilities=probs,
+        buckets=bucket_specs,
     )
 
 
@@ -214,7 +332,7 @@ def _trunc_normal_above(
 
 def format_probability_table(probabilities: dict[str, float]) -> str:
     lines = []
-    for name in [b[0] for b in BUCKETS]:
+    for name in [bucket.bucket for bucket in default_temperature_buckets()]:
         pct = probabilities.get(name, 0.0) * 100
         bar = "█" * max(0, int(pct * 2))
         lines.append(f"  {name:<16s} {pct:6.2f}% {bar}")
