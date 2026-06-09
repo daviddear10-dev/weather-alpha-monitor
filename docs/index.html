@@ -260,6 +260,20 @@
       text-align: center;
     }
 
+    .stale-live-probability {
+      border: 1px solid rgba(255, 191, 105, 0.55);
+      background: rgba(255, 191, 105, 0.08);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+
+    .stale-live-probability .warning-title {
+      color: var(--warn);
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
     @media (max-width: 920px) {
       .stats,
       .charts {
@@ -701,6 +715,22 @@
         card.innerHTML = `<div class="empty">暂无香港实时概率数据，等待自动任务生成。</div>`;
         return;
       }
+      if (!isLiveProbabilityCurrent()) {
+        const today = getHongKongTodayISO();
+        card.innerHTML = `
+          <div class="stale-live-probability">
+            <h3 style="margin:0;font-size:16px;">香港实时最高温概率</h3>
+            <div class="warning-title">今日实时概率尚未更新</div>
+            <div style="margin-top:10px;color:#dce6ff;font-size:13px;line-height:1.7;">
+              <div>当前数据日期：${escapeHtml(lp.local_date || "-")}</div>
+              <div>香港今天日期：${escapeHtml(today)}</div>
+            </div>
+            <div style="margin-top:10px;color:var(--warn);font-size:13px;font-weight:700;">旧数据，禁止用于今日决策</div>
+            <div style="margin-top:6px;color:var(--muted);font-size:12px;">等待自动任务生成今日数据。</div>
+          </div>
+        `;
+        return;
+      }
 
       const capturedShort = lp.captured_at
         ? new Date(lp.captured_at).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false })
@@ -1004,6 +1034,7 @@
     }
 
     function buildLiveProbabilityDecision(market) {
+      if (!isLiveProbabilityCurrent()) return null;
       const lp = state.liveProbability;
       if (!lp) return null;
       if (market.city !== "香港") return null;
@@ -1097,6 +1128,21 @@
         position,
         reason: reasonParts.filter(Boolean).join(" | ")
       };
+    }
+
+    function getHongKongTodayISO() {
+      return new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Hong_Kong",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).format(new Date());
+    }
+
+    function isLiveProbabilityCurrent() {
+      const lp = state.liveProbability;
+      if (!lp || !lp.local_date) return false;
+      return lp.local_date === getHongKongTodayISO();
     }
 
     function buildMarketDecision(market, prediction) {
