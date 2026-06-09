@@ -5,19 +5,5 @@
     "longitude": 114.1694,
     "timezone": "Asia/Hong_Kong",
     "enabled": true
-  },
-  {
-    "name": "纽约",
-    "latitude": 40.7128,
-    "longitude": -74.006,
-    "timezone": "America/New_York",
-    "enabled": true
-  },
-  {
-    "name": "新加坡",
-    "latitude": 1.3521,
-    "longitude": 103.8198,
-    "timezone": "Asia/Singapore",
-    "enabled": true
   }
 ]
