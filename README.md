@@ -316,6 +316,40 @@ docs/markets_draft.json
 
 如果同一个 `city + forecast_date + threshold + condition` 有重复，脚本会保留 `volume24hr` 更高的一条。生成后仍需人工确认 `forecast_date`、`condition`、`threshold`、`yes_price` 和结算规则，再复制到 `docs/markets.json`。
 
+## 香港维护机器人
+
+日常更新香港天气、Polymarket 候选市场、markets 草稿、实时概率，并在校验通过后提交和推送：
+
+```bash
+cd /Users/a122/Documents/weather-alpha-monitor
+source .venv/bin/activate
+python -m weather_monitor.hong_kong_maintenance
+```
+
+第一次测试建议使用 dry-run：
+
+```bash
+python -m weather_monitor.hong_kong_maintenance --dry-run
+```
+
+常用参数：
+
+- `--dry-run`：允许抓取和验证，但不复制 `markets_draft.json` 到 `markets.json`，不 `git add`，不 commit，不 push
+- `--no-push`：正常生成、验证和 commit，但不 push
+
+安全规则：
+
+- 运行前工作区必须干净；如果已有未提交改动，机器人会打印具体文件并退出
+- 只允许提交香港数据文件：
+  - `docs/weather_data.json`
+  - `docs/polymarket_candidates.json`
+  - `docs/markets_draft.json`
+  - `docs/markets.json`
+  - `docs/hong_kong_live_probability.json`
+  - `data/hong_kong_today_forecast_cache.json`
+- 不会提交 `weather_forecasts.sqlite`、`.env`、`.venv`、`__pycache__` 或包含 `key`、`secret`、`token` 命名的文件
+- 不接触 Polymarket 账户或钱包，不自动运行真实交易
+
 ## 查询最近 20 条记录
 
 ```bash
