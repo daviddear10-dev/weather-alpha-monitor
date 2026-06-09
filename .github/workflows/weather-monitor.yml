@@ -1,16 +1,10 @@
 name: Weather Monitor
 
 on:
-  schedule:
-    # Beijing 18:00
-    - cron: "0 10 * * *"
-    # Beijing 20:30
-    - cron: "30 12 * * *"
-    # Beijing 23:00
-    - cron: "0 15 * * *"
-    # Beijing 07:00 next day
-    - cron: "0 23 * * *"
   workflow_dispatch:
+  schedule:
+    # HKT 07:00 = UTC 23:00 on the previous day
+    - cron: "0 23 * * *"
 
 permissions:
   contents: write
