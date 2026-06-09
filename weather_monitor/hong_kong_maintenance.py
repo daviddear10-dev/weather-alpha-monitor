@@ -34,6 +34,10 @@ class MaintenanceError(Exception):
     pass
 
 
+class NoActiveMarket(Exception):
+    pass
+
+
 @dataclass
 class RunOptions:
     dry_run: bool
@@ -53,23 +57,25 @@ def main() -> None:
         step("2/18", "同步远程仓库", lambda: run_git(["pull", "--rebase"], timeout=120))
         backups = backup_files([Path(p) for p in PROTECTED_JSON_FILES])
         step("3/18", "更新香港天气数据", run_weather_monitor_flow)
-        step("4/18", "发现 Polymarket 候选市场", lambda: run_python_module("weather_monitor.polymarket_candidates", timeout=180))
+        candidate_proc = step("4/18", "发现 Polymarket 候选市场", lambda: run_python_module("weather_monitor.polymarket_candidates", timeout=180))
+        ensure_polymarket_candidates_fetch_succeeded(candidate_proc)
         step("5/18", "生成 markets 草稿", lambda: run_python_module("weather_monitor.markets_draft", timeout=60))
+        step("6/18", "检查可用香港 Polymarket 温度市场", check_active_market_files)
 
-        draft_markets = step("6/18", "校验 markets_draft.json", validate_markets_draft)
+        draft_markets = step("7/18", "校验 markets_draft.json", validate_markets_draft)
         active_markets = draft_markets
         if options.dry_run:
             print("dry-run: 跳过 markets_draft.json -> markets.json 原子复制")
         else:
-            step("7/18", "更新 markets.json", lambda: atomic_copy(Path("docs/markets_draft.json"), Path("docs/markets.json")))
+            step("8/18", "更新 markets.json", lambda: atomic_copy(Path("docs/markets_draft.json"), Path("docs/markets.json")))
             active_markets = load_json_array(Path("docs/markets.json"))
 
-        step("8/18", "运行香港实时概率", lambda: run_python_module("weather_monitor.capture_hong_kong_live_probability", timeout=180))
-        probabilities = step("9/18", "校验 hong_kong_live_probability.json", validate_live_probability)
-        step("10/18", "校验 markets 与 probabilities 匹配", lambda: validate_market_probability_match(active_markets, probabilities))
-        step("11/18", "清理非香港数据", clean_non_hong_kong_data)
-        step("12/18", "检查禁止提交文件", ensure_no_forbidden_files)
-        changed_allowed = step("13/18", "计算允许提交的数据文件", get_changed_allowed_files)
+        step("9/18", "运行香港实时概率", lambda: run_python_module("weather_monitor.capture_hong_kong_live_probability", timeout=180))
+        probabilities = step("10/18", "校验 hong_kong_live_probability.json", validate_live_probability)
+        step("11/18", "校验 markets 与 probabilities 匹配", lambda: validate_market_probability_match(active_markets, probabilities))
+        step("12/18", "清理非香港数据", clean_non_hong_kong_data)
+        step("13/18", "检查禁止提交文件", ensure_no_forbidden_files)
+        changed_allowed = step("14/18", "计算允许提交的数据文件", get_changed_allowed_files)
 
         if not changed_allowed:
             if options.dry_run:
@@ -90,16 +96,29 @@ def main() -> None:
             print("dry-run: 跳过 git add / commit / push")
             return
 
-        step("14/18", "添加允许的数据文件", lambda: git_add_allowed(changed_allowed))
-        step("15/18", "提交数据更新", commit_changes)
+        step("15/18", "添加允许的数据文件", lambda: git_add_allowed(changed_allowed))
+        step("16/18", "提交数据更新", commit_changes)
 
         if options.no_push:
             print("--no-push: 已提交，跳过推送")
             return
 
-        step("16/18", "推送前同步远程仓库", lambda: run_git(["pull", "--rebase"], timeout=120))
-        step("17/18", "推送到远程仓库", push_with_retries)
+        step("17/18", "推送前同步远程仓库", lambda: run_git(["pull", "--rebase"], timeout=120))
+        step("18/18", "推送到远程仓库", push_with_retries)
         print("✓ 推送成功")
+    except NoActiveMarket:
+        restore_files(backups)
+        backups = {}
+        warn_restore_runtime_sqlite()
+        print("当前没有可用的香港 Polymarket 温度市场。")
+        print("可能原因：")
+        print("- 今日市场已经结束")
+        print("- 明日市场尚未上线")
+        print()
+        print("已保留原有正式市场和数据文件。")
+        print("本次无需提交或推送。")
+        print("✓ 维护任务正常结束")
+        return
     except Exception as exc:
         restore_files(backups)
         warn_restore_runtime_sqlite()
@@ -120,6 +139,8 @@ def step(label: str, title: str, func):
     print(f"[{label}] {title}")
     try:
         result = func()
+    except NoActiveMarket:
+        raise
     except Exception as exc:
         raise MaintenanceError(f"{title}失败：{exc}") from exc
     return result
@@ -149,6 +170,12 @@ def run_git(args: list[str], timeout: int = 60, print_output: bool = True) -> su
 
 def run_python_module(module: str, timeout: int) -> subprocess.CompletedProcess[str]:
     return run_command([sys.executable, "-m", module], timeout=timeout)
+
+
+def ensure_polymarket_candidates_fetch_succeeded(proc: subprocess.CompletedProcess[str]) -> None:
+    output = "\n".join([proc.stdout or "", proc.stderr or ""])
+    if "Polymarket API 请求失败" in output:
+        raise MaintenanceError("Polymarket API 请求失败，不能按空市场跳过")
 
 
 def run_weather_monitor_flow() -> subprocess.CompletedProcess[str]:
@@ -223,6 +250,16 @@ def load_json_array(path: Path) -> list[dict[str, Any]]:
     return [item for item in payload if isinstance(item, dict)]
 
 
+def load_raw_json_array(path: Path) -> list[Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise MaintenanceError(f"{path} 不是合法 JSON：{exc}") from exc
+    if not isinstance(payload, list):
+        raise MaintenanceError(f"{path} 必须是 JSON 数组")
+    return payload
+
+
 def load_json_object(path: Path) -> dict[str, Any]:
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
@@ -235,6 +272,14 @@ def load_json_object(path: Path) -> dict[str, Any]:
 
 def hong_kong_today() -> str:
     return datetime.now(ZoneInfo(HK_TZ)).date().isoformat()
+
+
+def check_active_market_files() -> None:
+    candidates = load_raw_json_array(Path("docs/polymarket_candidates.json"))
+    draft = load_raw_json_array(Path("docs/markets_draft.json"))
+    if not candidates and not draft:
+        raise NoActiveMarket
+    print(f"✓ candidates: {len(candidates)} 条，markets_draft: {len(draft)} 条")
 
 
 def validate_markets_draft() -> list[dict[str, Any]]:
