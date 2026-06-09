@@ -3,13 +3,10 @@ name: Hong Kong Live Probability
 on:
   workflow_dispatch:
   schedule:
-    # HKT 09:05, 10:05, 11:05 = UTC 01:05, 02:05, 03:05
-    - cron: "5 1-3 * * *"
+    # HKT 09:00-13:40, every 20 minutes = UTC 01:00-05:40
+    - cron: "0,20,40 1-5 * * *"
 
-    # HKT 12:05-16:35, every 30 min = UTC 04:05-08:35
-    - cron: "5,35 4-8 * * *"
-
-    # HKT 17:05 = UTC 09:05
+    # HKT 17:05 = UTC 09:05, final daily observation for review
     - cron: "5 9 * * *"
 
 concurrency:
