@@ -1501,7 +1501,7 @@
             delta:
               previous === null
                 ? null
-                : roundTo(value - previous, 2),
+                : Math.round((value - previous) * 100) / 100,
             updated_at:
               item.max_temp_updated_at
               || item.hko_observed_at
