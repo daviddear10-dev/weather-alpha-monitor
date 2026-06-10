@@ -347,6 +347,309 @@
         padding-top: 22px;
       }
     }
+
+    /* realtime-focused-layout-v3 */
+    .realtime-layout-hidden {
+      display: none !important;
+    }
+
+    body.realtime-focused-dashboard .page {
+      width: min(1480px, calc(100% - 28px));
+      padding: 18px 0 42px;
+    }
+
+    .realtime-focused-grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 18px;
+      width: 100%;
+    }
+
+    .realtime-focused-grid > .focus-batch {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
+
+    .realtime-lower-grid {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns:
+        minmax(310px, 0.8fr)
+        minmax(0, 1.7fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    .realtime-lower-grid > .focus-summary,
+    .realtime-lower-grid > .focus-history {
+      margin: 0 !important;
+      min-width: 0;
+    }
+
+    body.realtime-focused-dashboard .card {
+      border-radius: 12px;
+      box-shadow: 0 12px 34px rgba(0, 0, 0, 0.24);
+    }
+
+    body.realtime-focused-dashboard .section {
+      padding: 18px 20px 20px;
+    }
+
+    body.realtime-focused-dashboard .section-head {
+      margin-bottom: 14px;
+      align-items: center;
+    }
+
+    body.realtime-focused-dashboard .section-head h2 {
+      font-size: 19px;
+      letter-spacing: 0.01em;
+    }
+
+    body.realtime-focused-dashboard .hint {
+      max-width: 58%;
+      text-align: right;
+      line-height: 1.45;
+    }
+
+    body.realtime-focused-dashboard .table-wrap {
+      position: relative;
+      overflow: auto;
+      overscroll-behavior: contain;
+      scrollbar-gutter: stable;
+      border-radius: 9px;
+    }
+
+    body.realtime-focused-dashboard th {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: #222b42;
+    }
+
+    body.realtime-focused-dashboard th,
+    body.realtime-focused-dashboard td {
+      padding: 12px 13px;
+    }
+
+    body.realtime-focused-dashboard tbody tr:first-child td {
+      background: rgba(122, 162, 255, 0.055);
+    }
+
+    body.realtime-focused-dashboard tbody tr:hover td {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .focus-batch table {
+      width: 100%;
+      min-width: 860px;
+      table-layout: fixed;
+    }
+
+    .focus-batch .table-wrap {
+      max-height: 420px;
+    }
+
+    .focus-summary table {
+      width: 100%;
+      min-width: 0;
+      table-layout: fixed;
+    }
+
+    .focus-summary .table-wrap {
+      max-height: 420px;
+    }
+
+    .focus-history table {
+      width: 100%;
+      min-width: 720px;
+      table-layout: fixed;
+    }
+
+    .focus-history .table-wrap {
+      max-height: 520px;
+    }
+
+    .focus-batch .max-temp {
+      color: #ffd0d0;
+      font-size: 14px;
+      font-weight: 780;
+    }
+
+
+    .focus-summary .section-head {
+      display: block;
+    }
+
+    .focus-summary .section-head .hint {
+      display: block;
+      max-width: none;
+      margin-top: 6px;
+      text-align: left;
+    }
+
+    .focus-summary th:nth-child(1),
+    .focus-summary td:nth-child(1) {
+      width: 42%;
+    }
+
+    .focus-summary th:nth-child(2),
+    .focus-summary td:nth-child(2) {
+      width: 32%;
+    }
+
+    .focus-summary th:nth-child(3),
+    .focus-summary td:nth-child(3) {
+      width: 26%;
+      text-align: right;
+    }
+
+    .focus-batch th:nth-child(1),
+    .focus-batch td:nth-child(1) {
+      width: 20%;
+    }
+
+    .focus-batch th:nth-child(2),
+    .focus-batch td:nth-child(2),
+    .focus-batch th:nth-child(3),
+    .focus-batch td:nth-child(3),
+    .focus-batch th:nth-child(4),
+    .focus-batch td:nth-child(4) {
+      width: 16%;
+      text-align: right;
+    }
+
+    .focus-batch th:nth-child(5),
+    .focus-batch td:nth-child(5) {
+      width: 18%;
+      text-align: right;
+    }
+
+    .focus-batch th:nth-child(6),
+    .focus-batch td:nth-child(6) {
+      width: 14%;
+      text-align: center;
+    }
+
+    .focus-history th:nth-child(1),
+    .focus-history td:nth-child(1) {
+      width: 19%;
+    }
+
+    .focus-history th:nth-child(2),
+    .focus-history td:nth-child(2) {
+      width: 20%;
+    }
+
+    .focus-history th:nth-child(3),
+    .focus-history td:nth-child(3) {
+      width: 17%;
+    }
+
+    .focus-history th:nth-child(4),
+    .focus-history td:nth-child(4),
+    .focus-history th:nth-child(5),
+    .focus-history td:nth-child(5) {
+      width: 13%;
+      text-align: right;
+    }
+
+    .focus-history th:nth-child(6),
+    .focus-history td:nth-child(6) {
+      width: 18%;
+    }
+
+    @media (max-width: 1100px) {
+      .realtime-lower-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .focus-summary,
+      .focus-history {
+        width: 100%;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body.realtime-focused-dashboard .page {
+        width: min(100% - 14px, 1480px);
+        padding-top: 8px;
+      }
+
+      .realtime-focused-grid,
+      .realtime-lower-grid {
+        gap: 12px;
+      }
+
+      body.realtime-focused-dashboard .section {
+        padding: 14px 12px 16px;
+      }
+
+      body.realtime-focused-dashboard .section-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      body.realtime-focused-dashboard .hint {
+        max-width: 100%;
+        text-align: left;
+      }
+
+      body.realtime-focused-dashboard th,
+      body.realtime-focused-dashboard td {
+        padding: 10px 11px;
+      }
+    }
+
+
+    /* forecast-history-layout-v5 */
+    .focus-history table {
+      width: 100%;
+      min-width: 0 !important;
+      table-layout: fixed;
+    }
+
+    .focus-history .table-wrap {
+      overflow-x: hidden;
+    }
+
+    .focus-history th:nth-child(1),
+    .focus-history td:nth-child(1) {
+      width: 23%;
+    }
+
+    .focus-history th:nth-child(2),
+    .focus-history td:nth-child(2) {
+      width: 20%;
+    }
+
+    .focus-history th:nth-child(3),
+    .focus-history td:nth-child(3) {
+      width: 17%;
+      text-align: right;
+    }
+
+    .focus-history th:nth-child(4),
+    .focus-history td:nth-child(4) {
+      width: 17%;
+      text-align: center;
+    }
+
+    .focus-history th:nth-child(5),
+    .focus-history td:nth-child(5) {
+      width: 23%;
+    }
+
+    @media (max-width: 720px) {
+      .focus-history .table-wrap {
+        overflow-x: auto;
+      }
+
+      .focus-history table {
+        min-width: 650px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -449,16 +752,15 @@
       <article class="card section">
         <div class="section-head">
           <h2>今日最高温预测</h2>
-          <span class="hint">Open-Meteo 与香港天文台预测源</span>
+          <span class="hint">每个可用数据源仅显示最新一条</span>
         </div>
         <div class="table-wrap">
           <table class="forecast-table">
             <thead>
               <tr>
-                <th>抓取时间</th>
                 <th>数据源</th>
                 <th>预测日期</th>
-                <th>预测最高温</th>
+                <th>最高温</th>
               </tr>
             </thead>
             <tbody id="forecastTable"></tbody>
@@ -545,12 +847,11 @@
           <thead>
             <tr>
               <th>抓取时间</th>
-              <th>城市</th>
-              <th>Open-Meteo 实时温度</th>
-              <th>香港天文台实时温度</th>
-              <th>双源平均温度</th>
-              <th>香港天文台今日最高温</th>
-              <th>数据完整性</th>
+              <th>Open-Meteo</th>
+              <th>香港天文台</th>
+              <th>双源平均</th>
+              <th>天文台今日最高</th>
+              <th>完整性</th>
             </tr>
           </thead>
           <tbody id="batchTable"></tbody>
@@ -568,13 +869,10 @@
           <thead>
             <tr>
               <th>抓取时间</th>
-              <th>批次</th>
-              <th>城市</th>
               <th>数据源</th>
-              <th>预报日期</th>
-              <th>最低温</th>
               <th>最高温</th>
-              <th>更新时间</th>
+              <th>状态</th>
+              <th>数据更新时间</th>
             </tr>
           </thead>
           <tbody id="recordsTable"></tbody>
@@ -584,9 +882,95 @@
   </main>
 
   <script>
+    // realtime-focused-layout-v3
+    function applyRealtimeFocusedLayout() {
+      const page = document.querySelector("main.page");
+      if (!page) return;
+
+      const findCardByTitle = (title) => {
+        const heading = Array.from(
+          page.querySelectorAll(".section-head h2")
+        ).find(
+          (element) =>
+            element.textContent.trim() === title
+        );
+
+        if (!heading) return null;
+
+        return heading.closest(".card.section");
+      };
+
+      const batchCard = findCardByTitle(
+        "双源实时批次对比"
+      );
+      const summaryCard = findCardByTitle(
+        "今日最高温预测"
+      );
+      const historyCard = findCardByTitle(
+        "今日最高温预测记录"
+      );
+
+      if (!batchCard || !summaryCard || !historyCard) {
+        console.error(
+          "无法定位三个核心区块，保留原页面布局"
+        );
+        return;
+      }
+
+      const originalChildren = Array.from(page.children);
+      originalChildren.forEach((element) => {
+        element.classList.add(
+          "realtime-layout-hidden"
+        );
+      });
+
+      batchCard.classList.remove(
+        "realtime-layout-hidden"
+      );
+      summaryCard.classList.remove(
+        "realtime-layout-hidden"
+      );
+      historyCard.classList.remove(
+        "realtime-layout-hidden"
+      );
+
+      batchCard.classList.add("focus-batch");
+      summaryCard.classList.add("focus-summary");
+      historyCard.classList.add("focus-history");
+
+      const focusedGrid = document.createElement("div");
+      focusedGrid.className =
+        "realtime-focused-grid";
+
+      const lowerGrid = document.createElement("div");
+      lowerGrid.className =
+        "realtime-lower-grid";
+
+      focusedGrid.appendChild(batchCard);
+      lowerGrid.appendChild(summaryCard);
+      lowerGrid.appendChild(historyCard);
+      focusedGrid.appendChild(lowerGrid);
+
+      page.appendChild(focusedGrid);
+      document.body.classList.add(
+        "realtime-focused-dashboard"
+      );
+
+      requestAnimationFrame(() => {
+        focusedGrid
+          .querySelectorAll(".table-wrap")
+          .forEach((wrapper) => {
+            wrapper.scrollLeft = 0;
+          });
+      });
+    }
+
+    applyRealtimeFocusedLayout();
+
     const state = {
       data: [],
       realtimeHistory: [],
+      hkoForecastHistory: [],
       markets: [],
       liveProbability: null,
       marketsLoaded: false,
@@ -611,14 +995,20 @@
       fetch("hong_kong_realtime_history.json", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : [])
         .catch(() => []),
+      fetch("hong_kong_forecast_history.json", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : [])
+        .catch(() => []),
       fetch("hong_kong_live_probability.json", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : null)
         .catch(() => null)
     ])
-      .then(([weatherData, markets, realtimeHistory, liveProb]) => {
+      .then(([weatherData, markets, realtimeHistory, hkoForecastHistory, liveProb]) => {
         state.data = Array.isArray(weatherData) ? weatherData : [];
         state.markets = Array.isArray(markets) ? markets : [];
         state.realtimeHistory = Array.isArray(realtimeHistory) ? realtimeHistory : [];
+        state.hkoForecastHistory = Array.isArray(hkoForecastHistory)
+          ? hkoForecastHistory
+          : [];
         state.liveProbability = (liveProb && typeof liveProb === 'object' && liveProb.probabilities) ? liveProb : null;
         state.marketsLoaded = true;
         state.realtimeHistoryLoaded = true;
@@ -649,6 +1039,7 @@
       const forecastDates = unique([
         ...data.filter((item) => item.city === "香港").map((item) => item.forecast_date),
         ...state.realtimeHistory.filter((item) => item.city === "香港").map((item) => item.local_date),
+        ...state.hkoForecastHistory.filter((item) => item.city === "香港").map((item) => item.forecast_date),
       ]).sort().reverse();
       forecastDates.forEach((date) => {
         forecastDateFilter.append(new Option(date, date));
@@ -674,10 +1065,29 @@
         return isHongKongRealtimeHistoryRecord(item)
           && (!forecastDateFilter.value || item.local_date === forecastDateFilter.value);
       }).sort((a, b) => new Date(b.captured_at) - new Date(a.captured_at));
+
+      const openMeteoForecasts = filtered.filter((item) => {
+        return item.source === "Open-Meteo";
+      });
+
+      const hkoForecasts = state.hkoForecastHistory.filter((item) => {
+        return isHongKongForecastHistoryRecord(item)
+          && (!forecastDateFilter.value || item.forecast_date === forecastDateFilter.value);
+      });
+
+      const combinedForecasts = [
+        ...openMeteoForecasts,
+        ...hkoForecasts
+      ].sort(
+        (a, b) =>
+          new Date(b.captured_at || 0).getTime()
+          - new Date(a.captured_at || 0).getTime()
+      );
+
       renderStats(filtered, realtimeFiltered);
       renderRealtimeTable(realtimeFiltered);
-      renderForecastTable(filtered);
-      renderRecords(filtered);
+      renderForecastTable(combinedForecasts);
+      renderRecords(combinedForecasts);
       renderBatchTable(realtimeFiltered);
       renderMarketTable();
       updateChartHints();
@@ -792,32 +1202,106 @@
         || `<tr><td colspan="7"><div class="empty">当前日期 09:00–13:59 暂无双源实时温度。</div></td></tr>`;
     }
 
+    function forecastValueText(item) {
+      const rawValue = item ? item.max_temp : null;
+
+      if (
+        rawValue !== null
+        && rawValue !== undefined
+        && rawValue !== ""
+      ) {
+        const value = Number(rawValue);
+
+        if (Number.isFinite(value)) {
+          return formatTemp(value);
+        }
+      }
+
+      if (item && item.status_text) {
+        return String(item.status_text);
+      }
+
+      if (item && item.status === "fetch_failed") {
+        return "抓取失败";
+      }
+
+      return "无明确数值";
+    }
+
     function renderForecastTable(data) {
-      const rows = data.slice(0, 40).map((item) => `
+      const latestBySource = new Map();
+
+      data.forEach((item) => {
+        if (!item || !item.source) return;
+
+        const existing = latestBySource.get(item.source);
+
+        const itemTime = new Date(
+          item.captured_at || item.fetched_at || 0
+        ).getTime();
+
+        const existingTime = existing
+          ? new Date(
+              existing.captured_at
+              || existing.fetched_at
+              || 0
+            ).getTime()
+          : -Infinity;
+
+        if (!existing || itemTime > existingTime) {
+          latestBySource.set(item.source, item);
+        }
+      });
+
+      const latestRows = Array.from(
+        latestBySource.values()
+      ).sort((a, b) => {
+        return new Date(
+          b.captured_at || b.fetched_at || 0
+        ).getTime()
+          - new Date(
+              a.captured_at || a.fetched_at || 0
+            ).getTime();
+      });
+
+      const rows = latestRows.map((item) => `
         <tr>
-          <td>${escapeHtml(item.captured_at)}</td>
-          <td>${escapeHtml(item.source)}</td>
-          <td>${escapeHtml(item.forecast_date)}</td>
-          <td>${formatTemp(item.max_temp)}</td>
+          <td>${escapeHtml(item.source || "-")}</td>
+          <td>${escapeHtml(item.forecast_date || "-")}</td>
+          <td><strong>${escapeHtml(forecastValueText(item))}</strong></td>
         </tr>
       `);
-      document.querySelector("#forecastTable").innerHTML = rows.join("") || `<tr><td colspan="4"><div class="empty">当前日期 09:00–13:59 暂无今日最高温预测。</div></td></tr>`;
+
+      document.querySelector("#forecastTable").innerHTML =
+        rows.join("")
+        || `<tr><td colspan="3"><div class="empty">当前日期暂无最高温预测。</div></td></tr>`;
     }
 
     function renderRecords(data) {
-      const rows = data.slice(0, 50).map((item) => `
-        <tr>
-          <td>${escapeHtml(item.captured_at)}</td>
-          <td><span class="tag">${escapeHtml(item.forecast_run_label)}</span></td>
-          <td>${escapeHtml(item.city)}</td>
-          <td>${escapeHtml(item.source)}</td>
-          <td>${escapeHtml(item.forecast_date)}</td>
-          <td>${item.min_temp != null ? formatTemp(item.min_temp) : 'N/A'}</td>
-          <td>${formatTemp(item.max_temp)}</td>
-          <td>${escapeHtml(item.update_time)}</td>
-        </tr>
-      `);
-      document.querySelector("#recordsTable").innerHTML = rows.join("") || `<tr><td colspan="8"><div class="empty">当前日期 09:00–13:59 暂无交易时段数据。</div></td></tr>`;
+      const rows = data.slice(0, 80).map((item) => {
+        const statusText = item.status_text
+          || (
+            item.max_temp !== null
+            && item.max_temp !== undefined
+            && item.max_temp !== ""
+              ? "正常"
+              : "无明确数值"
+          );
+
+        return `
+          <tr>
+            <td>${escapeHtml(compactDateTime(item.captured_at))}</td>
+            <td>${escapeHtml(item.source || "-")}</td>
+            <td><strong>${escapeHtml(forecastValueText(item))}</strong></td>
+            <td>${escapeHtml(statusText)}</td>
+            <td>${escapeHtml(compactDateTime(item.update_time || item.captured_at))}</td>
+          </tr>
+        `;
+      });
+
+      document.querySelector("#recordsTable").innerHTML =
+        rows.join("")
+        || `<tr><td colspan="5"><div class="empty">当前日期暂无预测记录。</div></td></tr>`;
     }
 
     function renderBatchTable(data) {
@@ -836,7 +1320,6 @@
           ? item.open_meteo_current_temp
           : null;
 
-        // 兼容升级前只有香港天文台单源温度的旧记录。
         const legacyHkoTemp =
           !hasOpenMeteo
           && !hasHko
@@ -863,13 +1346,12 @@
 
         const completeness =
           sourceCount === 2
-            ? '<span class="tag yes">2 / 2 完整</span>'
-            : `<span class="tag neutral">${sourceCount} / 2 不完整</span>`;
+            ? '<span class="tag yes">2 / 2</span>'
+            : `<span class="tag neutral">${sourceCount} / 2</span>`;
 
         return `
           <tr>
-            <td>${escapeHtml(item.captured_at || "-")}</td>
-            <td>${escapeHtml(item.city || "香港")}</td>
+            <td>${escapeHtml(compactDateTime(item.captured_at))}</td>
             <td>${openMeteoTemp !== null ? formatTemp(openMeteoTemp) : "-"}</td>
             <td>${hkoTemp !== null ? formatTemp(hkoTemp) : "-"}</td>
             <td class="max-temp">${averageTemp !== null ? formatTemp(averageTemp) : "-"}</td>
@@ -881,7 +1363,7 @@
 
       document.querySelector("#batchTable").innerHTML =
         rows.join("")
-        || `<tr><td colspan="7"><div class="empty">当前日期暂无双源实时批次。</div></td></tr>`;
+        || `<tr><td colspan="6"><div class="empty">当前日期暂无双源实时批次。</div></td></tr>`;
     }
 
     function renderHKProbabilityCard() {
@@ -1289,6 +1771,19 @@
       const parts = getHongKongDateParts(record.captured_at);
       if (!parts) return false;
       if (record.local_date !== parts.isoDate) return false;
+      return parts.hour >= 9 && parts.hour < 14;
+    }
+
+    function isHongKongForecastHistoryRecord(record) {
+      if (!record || record.city !== "香港") return false;
+
+      const parts = getHongKongDateParts(record.captured_at);
+      if (!parts) return false;
+
+      if (record.forecast_date !== parts.isoDate) {
+        return false;
+      }
+
       return parts.hour >= 9 && parts.hour < 14;
     }
 
