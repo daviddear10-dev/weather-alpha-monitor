@@ -650,6 +650,138 @@
       }
     }
 
+  
+    /* achieved-max-layout-v1 */
+    .realtime-focused-grid > .focus-achieved {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
+
+    .achieved-max-summary {
+      display: grid;
+      grid-template-columns: minmax(250px, 0.65fr) minmax(0, 1.35fr);
+      gap: 18px;
+      margin-bottom: 16px;
+    }
+
+    .achieved-max-primary,
+    .achieved-max-meta {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(255, 112, 112, 0.10),
+          rgba(122, 162, 255, 0.05)
+        );
+    }
+
+    .achieved-max-primary {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 126px;
+      padding: 20px 22px;
+    }
+
+    .achieved-max-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 680;
+      letter-spacing: 0.03em;
+    }
+
+    .achieved-max-value {
+      margin-top: 8px;
+      color: #ffd0d0;
+      font-size: clamp(34px, 4vw, 52px);
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .achieved-max-source {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .achieved-max-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+    }
+
+    .achieved-meta-item {
+      min-width: 0;
+      padding: 20px 18px;
+      background: rgba(255, 255, 255, 0.018);
+    }
+
+    .achieved-meta-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .achieved-meta-value {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 720;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .achieved-history-table {
+      width: 100%;
+      min-width: 0 !important;
+      table-layout: fixed;
+    }
+
+    .achieved-history-table th:nth-child(1),
+    .achieved-history-table td:nth-child(1) {
+      width: 25%;
+    }
+
+    .achieved-history-table th:nth-child(2),
+    .achieved-history-table td:nth-child(2) {
+      width: 23%;
+      text-align: right;
+    }
+
+    .achieved-history-table th:nth-child(3),
+    .achieved-history-table td:nth-child(3) {
+      width: 22%;
+      text-align: center;
+    }
+
+    .achieved-history-table th:nth-child(4),
+    .achieved-history-table td:nth-child(4) {
+      width: 30%;
+    }
+
+    @media (max-width: 850px) {
+      .achieved-max-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .achieved-max-meta {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .focus-achieved .table-wrap {
+        overflow-x: auto;
+      }
+
+      .achieved-history-table {
+        min-width: 620px !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -917,24 +1049,97 @@
         return;
       }
 
+      let achievedCard =
+        document.querySelector("#achievedMaxCard");
+
+      if (!achievedCard) {
+        achievedCard = document.createElement("section");
+        achievedCard.id = "achievedMaxCard";
+        achievedCard.className =
+          "card section focus-achieved";
+
+        achievedCard.innerHTML = `
+          <div class="section-head">
+            <h2>今日已实现最高温</h2>
+            <span class="hint">仅采用香港天文台正式观测，历史只显示升高节点</span>
+          </div>
+
+          <div class="achieved-max-summary">
+            <div class="achieved-max-primary">
+              <span class="achieved-max-label">当前已实现最高温</span>
+              <strong
+                id="achievedMaxValue"
+                class="achieved-max-value"
+              >-</strong>
+              <span class="achieved-max-source">
+                结算观测来源：香港天文台
+              </span>
+            </div>
+
+            <div class="achieved-max-meta">
+              <div class="achieved-meta-item">
+                <span class="achieved-meta-label">数据更新时间</span>
+                <strong
+                  id="achievedMaxUpdated"
+                  class="achieved-meta-value"
+                >-</strong>
+              </div>
+
+              <div class="achieved-meta-item">
+                <span class="achieved-meta-label">当前状态</span>
+                <strong
+                  id="achievedMaxStatus"
+                  class="achieved-meta-value"
+                >-</strong>
+              </div>
+
+              <div class="achieved-meta-item">
+                <span class="achieved-meta-label">最近抓取批次</span>
+                <strong
+                  id="achievedMaxBatch"
+                  class="achieved-meta-value"
+                >-</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table class="achieved-history-table">
+              <thead>
+                <tr>
+                  <th>记录时间</th>
+                  <th>已实现最高温</th>
+                  <th>较前次变化</th>
+                  <th>数据更新时间</th>
+                </tr>
+              </thead>
+              <tbody id="achievedMaxHistory"></tbody>
+            </table>
+          </div>
+        `;
+      }
+
       const originalChildren = Array.from(page.children);
+
       originalChildren.forEach((element) => {
         element.classList.add(
           "realtime-layout-hidden"
         );
       });
 
-      batchCard.classList.remove(
-        "realtime-layout-hidden"
-      );
-      summaryCard.classList.remove(
-        "realtime-layout-hidden"
-      );
-      historyCard.classList.remove(
-        "realtime-layout-hidden"
-      );
+      [
+        batchCard,
+        achievedCard,
+        summaryCard,
+        historyCard
+      ].forEach((element) => {
+        element.classList.remove(
+          "realtime-layout-hidden"
+        );
+      });
 
       batchCard.classList.add("focus-batch");
+      achievedCard.classList.add("focus-achieved");
       summaryCard.classList.add("focus-summary");
       historyCard.classList.add("focus-history");
 
@@ -947,11 +1152,14 @@
         "realtime-lower-grid";
 
       focusedGrid.appendChild(batchCard);
+      focusedGrid.appendChild(achievedCard);
+
       lowerGrid.appendChild(summaryCard);
       lowerGrid.appendChild(historyCard);
-      focusedGrid.appendChild(lowerGrid);
 
+      focusedGrid.appendChild(lowerGrid);
       page.appendChild(focusedGrid);
+
       document.body.classList.add(
         "realtime-focused-dashboard"
       );
@@ -1086,6 +1294,7 @@
 
       renderStats(filtered, realtimeFiltered);
       renderRealtimeTable(realtimeFiltered);
+      renderAchievedMax(realtimeFiltered);
       renderForecastTable(combinedForecasts);
       renderRecords(combinedForecasts);
       renderBatchTable(realtimeFiltered);
@@ -1226,6 +1435,125 @@
       }
 
       return "无明确数值";
+    }
+
+    function renderAchievedMax(data) {
+      const validRows = data
+        .filter((item) => {
+          if (!item) return false;
+
+          const value = Number(item.today_max_temp);
+          return Number.isFinite(value);
+        })
+        .sort(
+          (a, b) =>
+            new Date(a.captured_at || 0).getTime()
+            - new Date(b.captured_at || 0).getTime()
+        );
+
+      const valueElement =
+        document.querySelector("#achievedMaxValue");
+      const updatedElement =
+        document.querySelector("#achievedMaxUpdated");
+      const statusElement =
+        document.querySelector("#achievedMaxStatus");
+      const batchElement =
+        document.querySelector("#achievedMaxBatch");
+      const historyElement =
+        document.querySelector("#achievedMaxHistory");
+
+      if (
+        !valueElement
+        || !updatedElement
+        || !statusElement
+        || !batchElement
+        || !historyElement
+      ) {
+        return;
+      }
+
+      if (!validRows.length) {
+        valueElement.textContent = "-";
+        updatedElement.textContent = "-";
+        statusElement.textContent = "暂无香港天文台数据";
+        batchElement.textContent = "-";
+        historyElement.innerHTML =
+          `<tr><td colspan="4"><div class="empty">当前日期暂无已实现最高温记录。</div></td></tr>`;
+        return;
+      }
+
+      let runningMax = null;
+      const changes = [];
+
+      validRows.forEach((item) => {
+        const value = Number(item.today_max_temp);
+
+        if (
+          runningMax === null
+          || value > runningMax + 1e-9
+        ) {
+          const previous = runningMax;
+          runningMax = value;
+
+          changes.push({
+            captured_at: item.captured_at,
+            value,
+            delta:
+              previous === null
+                ? null
+                : roundTo(value - previous, 2),
+            updated_at:
+              item.max_temp_updated_at
+              || item.hko_observed_at
+              || item.observed_at
+              || item.captured_at
+          });
+        }
+      });
+
+      const latestRow = validRows[
+        validRows.length - 1
+      ];
+
+      const latestUpdate =
+        latestRow.max_temp_updated_at
+        || latestRow.hko_observed_at
+        || latestRow.observed_at
+        || latestRow.captured_at;
+
+      valueElement.textContent = formatTemp(runningMax);
+      updatedElement.textContent =
+        compactDateTime(latestUpdate);
+      batchElement.textContent =
+        compactDateTime(latestRow.captured_at);
+
+      statusElement.textContent =
+        changes.length <= 1
+          ? "今日最高纪录暂未上升"
+          : `今日最高纪录已更新 ${changes.length - 1} 次`;
+
+      const rows = changes
+        .slice()
+        .reverse()
+        .map((item) => {
+          const deltaText =
+            item.delta === null
+              ? "首次记录"
+              : `+${item.delta.toFixed(2)}℃`;
+
+          return `
+            <tr>
+              <td>${escapeHtml(compactDateTime(item.captured_at))}</td>
+              <td><strong>${formatTemp(item.value)}</strong></td>
+              <td>${escapeHtml(deltaText)}</td>
+              <td>${escapeHtml(compactDateTime(item.updated_at))}</td>
+            </tr>
+          `;
+        });
+
+      historyElement.innerHTML =
+        rows.join("")
+        || `<tr><td colspan="4"><div class="empty">当前日期暂无最高温变化。</div></td></tr>`;
     }
 
     function renderForecastTable(data) {
