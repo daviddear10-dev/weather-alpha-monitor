@@ -39,11 +39,6 @@ def main() -> None:
     print(f"香港当地时间: {now_hk.isoformat(timespec='seconds')}")
     print()
 
-    market_bucket_source, market_buckets = _load_market_buckets(today_str)
-    print(f"市场档位来源: {market_bucket_source}")
-    print("市场档位: " + ", ".join(bucket.bucket for bucket in market_buckets))
-    print()
-
     # ── Step 1: real-time observation ──
     obs = fetch_hong_kong_realtime(session=session)
     if obs is None or obs.current_temp is None:
@@ -51,6 +46,11 @@ def main() -> None:
         sys.exit(1)
 
     achieved_max = obs.today_max_temp or obs.current_temp
+
+    market_bucket_source, market_buckets = _load_market_buckets(today_str)
+    print(f"市场档位来源: {market_bucket_source}")
+    print("市场档位: " + ", ".join(bucket.bucket for bucket in market_buckets))
+    print()
 
     # ── Step 2: forecast highs for TODAY from multiple sources ──
     forecast_sources: list[dict] = []

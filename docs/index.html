@@ -77,6 +77,12 @@
       align-items: stretch;
     }
 
+    .observation-grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      margin-top: 16px;
+      align-items: stretch;
+    }
+
     .card {
       background: linear-gradient(180deg, rgba(255, 255, 255, 0.045), rgba(255, 255, 255, 0.02)), var(--panel);
       border: 1px solid rgba(255, 255, 255, 0.08);
@@ -278,6 +284,11 @@
       min-width: 760px;
     }
 
+    .realtime-table,
+    .forecast-table {
+      min-width: 720px;
+    }
+
     .batch-table th:nth-child(3),
     .batch-table th:nth-child(4),
     .batch-table th:nth-child(5),
@@ -326,7 +337,8 @@
 
     @media (max-width: 920px) {
       .stats,
-      .charts {
+      .charts,
+      .observation-grid {
         grid-template-columns: 1fr;
       }
 
@@ -408,6 +420,49 @@
           <option value="">全部数据源</option>
         </select>
       </label>
+    </section>
+
+    <section class="grid observation-grid">
+      <article class="card section">
+        <div class="section-head">
+          <h2>香港天文台实时观测</h2>
+          <span class="hint">当前温度与今日已录得最高温</span>
+        </div>
+        <div class="table-wrap">
+          <table class="realtime-table">
+            <thead>
+              <tr>
+                <th>抓取时间</th>
+                <th>当前温度</th>
+                <th>今日已录得最高温</th>
+                <th>观测更新时间</th>
+                <th>数据源</th>
+              </tr>
+            </thead>
+            <tbody id="realtimeTable"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="card section">
+        <div class="section-head">
+          <h2>今日最高温预测</h2>
+          <span class="hint">Open-Meteo 与香港天文台预测源</span>
+        </div>
+        <div class="table-wrap">
+          <table class="forecast-table">
+            <thead>
+              <tr>
+                <th>抓取时间</th>
+                <th>数据源</th>
+                <th>预测日期</th>
+                <th>预测最高温</th>
+              </tr>
+            </thead>
+            <tbody id="forecastTable"></tbody>
+          </table>
+        </div>
+      </article>
     </section>
 
     <section class="card section" style="margin-top: 16px;">
@@ -528,9 +583,11 @@
   <script>
     const state = {
       data: [],
+      realtimeHistory: [],
       markets: [],
       liveProbability: null,
       marketsLoaded: false,
+      realtimeHistoryLoaded: false,
       liveProbabilityLoaded: false,
       maxChart: null,
       minChart: null
@@ -548,20 +605,27 @@
       fetch("markets.json", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : [])
         .catch(() => []),
+      fetch("hong_kong_realtime_history.json", { cache: "no-store" })
+        .then((response) => response.ok ? response.json() : [])
+        .catch(() => []),
       fetch("hong_kong_live_probability.json", { cache: "no-store" })
         .then((response) => response.ok ? response.json() : null)
         .catch(() => null)
     ])
-      .then(([weatherData, markets, liveProb]) => {
+      .then(([weatherData, markets, realtimeHistory, liveProb]) => {
         state.data = Array.isArray(weatherData) ? weatherData : [];
         state.markets = Array.isArray(markets) ? markets : [];
+        state.realtimeHistory = Array.isArray(realtimeHistory) ? realtimeHistory : [];
         state.liveProbability = (liveProb && typeof liveProb === 'object' && liveProb.probabilities) ? liveProb : null;
         state.marketsLoaded = true;
+        state.realtimeHistoryLoaded = true;
         state.liveProbabilityLoaded = true;
         setupFilters(state.data);
         render();
       })
       .catch(() => {
+        document.querySelector("#realtimeTable").innerHTML = `<tr><td colspan="5"><div class="empty">暂无香港天文台实时观测数据。</div></td></tr>`;
+        document.querySelector("#forecastTable").innerHTML = `<tr><td colspan="4"><div class="empty">暂无今日最高温预测数据。</div></td></tr>`;
         document.querySelector("#recordsTable").innerHTML = `<tr><td colspan="8"><div class="empty">暂无数据，请先运行 weather_monitor 生成 weather_data.json。</div></td></tr>`;
         document.querySelector("#marketTable").innerHTML = `<tr><td colspan="12"><div class="empty">请先配置 docs/markets.json。</div></td></tr>`;
       });
@@ -579,7 +643,10 @@
         sourceFilter.append(new Option(source, source));
       });
       forecastDateFilter.append(new Option("全部预报日期", ""));
-      const forecastDates = unique(data.filter((item) => item.city === "香港").map((item) => item.forecast_date)).sort().reverse();
+      const forecastDates = unique([
+        ...data.filter((item) => item.city === "香港").map((item) => item.forecast_date),
+        ...state.realtimeHistory.filter((item) => item.city === "香港").map((item) => item.local_date),
+      ]).sort().reverse();
       forecastDates.forEach((date) => {
         forecastDateFilter.append(new Option(date, date));
       });
@@ -600,7 +667,13 @@
           && (!cityFilter.value || item.city === cityFilter.value)
           && (!sourceFilter.value || item.source === sourceFilter.value);
       }).sort((a, b) => new Date(b.fetched_at || b.captured_at) - new Date(a.fetched_at || a.captured_at));
+      const realtimeFiltered = state.realtimeHistory.filter((item) => {
+        return isHongKongRealtimeHistoryRecord(item)
+          && (!forecastDateFilter.value || item.local_date === forecastDateFilter.value);
+      }).sort((a, b) => new Date(b.captured_at) - new Date(a.captured_at));
       renderStats(filtered);
+      renderRealtimeTable(realtimeFiltered);
+      renderForecastTable(filtered);
       renderRecords(filtered);
       renderBatchTable(filtered);
       renderMarketTable();
@@ -629,6 +702,31 @@
       document.querySelector("#sourceCoverage").textContent = `${multiSourceCities} / ${totalCities}`;
     }
 
+    function renderRealtimeTable(data) {
+      const rows = data.slice(0, 40).map((item) => `
+        <tr>
+          <td>${escapeHtml(item.captured_at)}</td>
+          <td>${formatTemp(item.current_temp)}</td>
+          <td>${formatTemp(item.today_max_temp)}</td>
+          <td>${escapeHtml(item.observed_at || item.max_temp_updated_at || "-")}</td>
+          <td>${escapeHtml(item.source || "香港天文台-实时观测")}</td>
+        </tr>
+      `);
+      document.querySelector("#realtimeTable").innerHTML = rows.join("") || `<tr><td colspan="5"><div class="empty">当前日期 09:00–13:59 暂无香港天文台实时观测。</div></td></tr>`;
+    }
+
+    function renderForecastTable(data) {
+      const rows = data.slice(0, 40).map((item) => `
+        <tr>
+          <td>${escapeHtml(item.captured_at)}</td>
+          <td>${escapeHtml(item.source)}</td>
+          <td>${escapeHtml(item.forecast_date)}</td>
+          <td>${formatTemp(item.max_temp)}</td>
+        </tr>
+      `);
+      document.querySelector("#forecastTable").innerHTML = rows.join("") || `<tr><td colspan="4"><div class="empty">当前日期 09:00–13:59 暂无今日最高温预测。</div></td></tr>`;
+    }
+
     function renderRecords(data) {
       const rows = data.slice(0, 50).map((item) => `
         <tr>
@@ -652,13 +750,36 @@
         const existing = groups.get(key) || {
           label: item.forecast_run_label,
           city: item.city,
+          count: 0,
           minTemps: [],
           maxTemps: [],
           sources: new Set()
         };
-        const mt = Number(item.min_temp);
-        if (Number.isFinite(mt)) existing.minTemps.push(mt);
-        existing.maxTemps.push(Number(item.max_temp));
+
+        existing.count += 1;
+
+        if (
+          item.min_temp !== null
+          && item.min_temp !== undefined
+          && item.min_temp !== ""
+        ) {
+          const minTemp = Number(item.min_temp);
+          if (Number.isFinite(minTemp)) {
+            existing.minTemps.push(minTemp);
+          }
+        }
+
+        if (
+          item.max_temp !== null
+          && item.max_temp !== undefined
+          && item.max_temp !== ""
+        ) {
+          const maxTemp = Number(item.max_temp);
+          if (Number.isFinite(maxTemp)) {
+            existing.maxTemps.push(maxTemp);
+          }
+        }
+
         existing.sources.add(item.source);
         groups.set(key, existing);
       });
@@ -667,7 +788,7 @@
         <tr>
           <td><span class="tag">${escapeHtml(group.label)}</span></td>
           <td>${escapeHtml(group.city)}</td>
-          <td>${group.minTemps.length}</td>
+          <td>${group.count}</td>
           <td>${formatTemp(avg(group.minTemps))}</td>
           <td class="max-temp">${formatTemp(avg(group.maxTemps))}</td>
           <td><div class="source-list">${escapeHtml(Array.from(group.sources).join("、"))}</div></td>
@@ -1073,6 +1194,14 @@
       const parts = getHongKongDateParts(capturedAt);
       if (!parts) return false;
       if (record.forecast_date !== parts.isoDate) return false;
+      return parts.hour >= 9 && parts.hour < 14;
+    }
+
+    function isHongKongRealtimeHistoryRecord(record) {
+      if (!record || record.city !== "香港") return false;
+      const parts = getHongKongDateParts(record.captured_at);
+      if (!parts) return false;
+      if (record.local_date !== parts.isoDate) return false;
       return parts.hour >= 9 && parts.hour < 14;
     }
 

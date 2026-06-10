@@ -19,6 +19,7 @@ ALLOWED_COMMIT_FILES = {
     "docs/polymarket_candidates.json",
     "docs/markets_draft.json",
     "docs/markets.json",
+    "docs/hong_kong_realtime_history.json",
     "docs/hong_kong_live_probability.json",
     "data/hong_kong_today_forecast_cache.json",
 }
@@ -50,32 +51,33 @@ def main() -> None:
     backups: dict[Path, bytes | None] = {}
 
     try:
-        repo_root = step("1/18", "检查 Git 状态", ensure_git_repo)
+        repo_root = step("1/19", "检查 Git 状态", ensure_git_repo)
         os.chdir(repo_root)
         ensure_clean_worktree()
 
-        step("2/18", "同步远程仓库", lambda: run_git(["pull", "--rebase"], timeout=120))
+        step("2/19", "同步远程仓库", lambda: run_git(["pull", "--rebase"], timeout=120))
         backups = backup_files([Path(p) for p in PROTECTED_JSON_FILES])
-        step("3/18", "更新香港天气数据", run_weather_monitor_flow)
-        candidate_proc = step("4/18", "发现 Polymarket 候选市场", lambda: run_python_module("weather_monitor.polymarket_candidates", timeout=180))
+        step("3/19", "更新香港天气数据", run_weather_monitor_flow)
+        step("4/19", "记录香港天文台实时观测", lambda: run_python_module("weather_monitor.capture_hong_kong_realtime_history", timeout=120))
+        candidate_proc = step("5/19", "发现 Polymarket 候选市场", lambda: run_python_module("weather_monitor.polymarket_candidates", timeout=180))
         ensure_polymarket_candidates_fetch_succeeded(candidate_proc)
-        step("5/18", "生成 markets 草稿", lambda: run_python_module("weather_monitor.markets_draft", timeout=60))
-        step("6/18", "检查可用香港 Polymarket 温度市场", check_active_market_files)
+        step("6/19", "生成 markets 草稿", lambda: run_python_module("weather_monitor.markets_draft", timeout=60))
+        step("7/19", "检查可用香港 Polymarket 温度市场", check_active_market_files)
 
-        draft_markets = step("7/18", "校验 markets_draft.json", validate_markets_draft)
+        draft_markets = step("8/19", "校验 markets_draft.json", validate_markets_draft)
         active_markets = draft_markets
         if options.dry_run:
             print("dry-run: 跳过 markets_draft.json -> markets.json 原子复制")
         else:
-            step("8/18", "更新 markets.json", lambda: atomic_copy(Path("docs/markets_draft.json"), Path("docs/markets.json")))
+            step("9/19", "更新 markets.json", lambda: atomic_copy(Path("docs/markets_draft.json"), Path("docs/markets.json")))
             active_markets = load_json_array(Path("docs/markets.json"))
 
-        step("9/18", "运行香港实时概率", lambda: run_python_module("weather_monitor.capture_hong_kong_live_probability", timeout=180))
-        probabilities = step("10/18", "校验 hong_kong_live_probability.json", validate_live_probability)
-        step("11/18", "校验 markets 与 probabilities 匹配", lambda: validate_market_probability_match(active_markets, probabilities))
-        step("12/18", "清理非香港数据", clean_non_hong_kong_data)
-        step("13/18", "检查禁止提交文件", ensure_no_forbidden_files)
-        changed_allowed = step("14/18", "计算允许提交的数据文件", get_changed_allowed_files)
+        step("10/19", "运行香港实时概率", lambda: run_python_module("weather_monitor.capture_hong_kong_live_probability", timeout=180))
+        probabilities = step("11/19", "校验 hong_kong_live_probability.json", validate_live_probability)
+        step("12/19", "校验 markets 与 probabilities 匹配", lambda: validate_market_probability_match(active_markets, probabilities))
+        step("13/19", "清理非香港数据", clean_non_hong_kong_data)
+        step("14/19", "检查禁止提交文件", ensure_no_forbidden_files)
+        changed_allowed = step("15/19", "计算允许提交的数据文件", get_changed_allowed_files)
 
         if not changed_allowed:
             if options.dry_run:
@@ -96,19 +98,20 @@ def main() -> None:
             print("dry-run: 跳过 git add / commit / push")
             return
 
-        step("15/18", "添加允许的数据文件", lambda: git_add_allowed(changed_allowed))
-        step("16/18", "提交数据更新", commit_changes)
+        step("16/19", "添加允许的数据文件", lambda: git_add_allowed(changed_allowed))
+        step("17/19", "提交数据更新", commit_changes)
 
         if options.no_push:
             print("--no-push: 已提交，跳过推送")
             return
 
-        step("17/18", "推送前同步远程仓库", lambda: run_git(["pull", "--rebase"], timeout=120))
-        step("18/18", "推送到远程仓库", push_with_retries)
+        step("18/19", "推送前同步远程仓库", lambda: run_git(["pull", "--rebase"], timeout=120))
+        step("19/19", "推送到远程仓库", push_with_retries)
         print("✓ 推送成功")
     except NoActiveMarket:
         weather_commit_files = {
             "docs/weather_data.json",
+            "docs/hong_kong_realtime_history.json",
             "data/hong_kong_today_forecast_cache.json",
         }
 
