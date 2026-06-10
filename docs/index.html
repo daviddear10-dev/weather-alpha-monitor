@@ -650,7 +650,7 @@
       }
     }
 
-  
+
     /* achieved-max-layout-v1 */
     .realtime-focused-grid > .focus-achieved {
       grid-column: 1 / -1;
@@ -779,6 +779,115 @@
 
       .achieved-history-table {
         min-width: 620px !important;
+      }
+    }
+
+
+    /* hko-morning-forecast-layout-v1 */
+    .realtime-focused-grid > .focus-hko-morning {
+      grid-column: 1 / -1;
+      margin: 0;
+    }
+
+    .hko-morning-grid {
+      display: grid;
+      grid-template-columns:
+        minmax(250px, 0.7fr)
+        minmax(0, 1.3fr);
+      gap: 18px;
+    }
+
+    .hko-morning-primary,
+    .hko-morning-meta {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background:
+        linear-gradient(
+          135deg,
+          rgba(255, 184, 92, 0.12),
+          rgba(122, 162, 255, 0.05)
+        );
+    }
+
+    .hko-morning-primary {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 132px;
+      padding: 21px 23px;
+    }
+
+    .hko-morning-label {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 680;
+      letter-spacing: 0.03em;
+    }
+
+    .hko-morning-value {
+      margin-top: 8px;
+      color: #ffd9a6;
+      font-size: clamp(34px, 4vw, 52px);
+      font-weight: 850;
+      line-height: 1;
+    }
+
+    .hko-morning-source {
+      margin-top: 11px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hko-morning-meta {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+    }
+
+    .hko-morning-meta-item {
+      min-width: 0;
+      padding: 21px 17px;
+      background: rgba(255, 255, 255, 0.018);
+    }
+
+    .hko-morning-meta-label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .hko-morning-meta-value {
+      display: block;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 720;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+    }
+
+    .hko-morning-status-ok {
+      color: #90efc8;
+    }
+
+    .hko-morning-status-missing {
+      color: #ffd0a1;
+    }
+
+    @media (max-width: 960px) {
+      .hko-morning-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hko-morning-meta {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 580px) {
+      .hko-morning-meta {
+        grid-template-columns: 1fr;
       }
     }
 
@@ -1119,6 +1228,70 @@
         `;
       }
 
+      let morningCard =
+        document.querySelector("#hkoMorningForecastCard");
+
+      if (!morningCard) {
+        morningCard = document.createElement("section");
+        morningCard.id = "hkoMorningForecastCard";
+        morningCard.className =
+          "card section focus-hko-morning";
+
+        morningCard.innerHTML = `
+          <div class="section-head">
+            <h2>香港天文台 07:45 每日最高温预测</h2>
+            <span class="hint">只读取香港天文台当天早上 07:45 发布的正式版本</span>
+          </div>
+
+          <div class="hko-morning-grid">
+            <div class="hko-morning-primary">
+              <span class="hko-morning-label">07:45 预测最高温</span>
+              <strong
+                id="hkoMorningForecastValue"
+                class="hko-morning-value"
+              >-</strong>
+              <span class="hko-morning-source">
+                数据源：香港天文台-今日预测
+              </span>
+            </div>
+
+            <div class="hko-morning-meta">
+              <div class="hko-morning-meta-item">
+                <span class="hko-morning-meta-label">预测日期</span>
+                <strong
+                  id="hkoMorningForecastDate"
+                  class="hko-morning-meta-value"
+                >-</strong>
+              </div>
+
+              <div class="hko-morning-meta-item">
+                <span class="hko-morning-meta-label">官方发布时间</span>
+                <strong
+                  id="hkoMorningForecastUpdated"
+                  class="hko-morning-meta-value"
+                >-</strong>
+              </div>
+
+              <div class="hko-morning-meta-item">
+                <span class="hko-morning-meta-label">系统抓取时间</span>
+                <strong
+                  id="hkoMorningForecastCaptured"
+                  class="hko-morning-meta-value"
+                >-</strong>
+              </div>
+
+              <div class="hko-morning-meta-item">
+                <span class="hko-morning-meta-label">与已实现最高温比较</span>
+                <strong
+                  id="hkoMorningForecastGap"
+                  class="hko-morning-meta-value"
+                >-</strong>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
       const originalChildren = Array.from(page.children);
 
       originalChildren.forEach((element) => {
@@ -1130,6 +1303,7 @@
       [
         batchCard,
         achievedCard,
+        morningCard,
         summaryCard,
         historyCard
       ].forEach((element) => {
@@ -1140,6 +1314,7 @@
 
       batchCard.classList.add("focus-batch");
       achievedCard.classList.add("focus-achieved");
+      morningCard.classList.add("focus-hko-morning");
       summaryCard.classList.add("focus-summary");
       historyCard.classList.add("focus-history");
 
@@ -1153,6 +1328,7 @@
 
       focusedGrid.appendChild(batchCard);
       focusedGrid.appendChild(achievedCard);
+      focusedGrid.appendChild(morningCard);
 
       lowerGrid.appendChild(summaryCard);
       lowerGrid.appendChild(historyCard);
@@ -1295,6 +1471,7 @@
       renderStats(filtered, realtimeFiltered);
       renderRealtimeTable(realtimeFiltered);
       renderAchievedMax(realtimeFiltered);
+      renderHkoMorningForecast(state.data);
       renderForecastTable(combinedForecasts);
       renderRecords(combinedForecasts);
       renderBatchTable(realtimeFiltered);
@@ -1435,6 +1612,152 @@
       }
 
       return "无明确数值";
+    }
+
+    function renderHkoMorningForecast(data) {
+      const valueElement =
+        document.querySelector("#hkoMorningForecastValue");
+      const dateElement =
+        document.querySelector("#hkoMorningForecastDate");
+      const updateElement =
+        document.querySelector("#hkoMorningForecastUpdated");
+      const capturedElement =
+        document.querySelector("#hkoMorningForecastCaptured");
+      const gapElement =
+        document.querySelector("#hkoMorningForecastGap");
+
+      if (
+        !valueElement
+        || !dateElement
+        || !updateElement
+        || !capturedElement
+        || !gapElement
+      ) {
+        return;
+      }
+
+      const targetDate =
+        forecastDateFilter.value
+        || unique(
+          data
+            .filter((item) => item.city === "香港")
+            .map((item) => item.forecast_date)
+            .filter(Boolean)
+        ).sort().reverse()[0]
+        || "";
+
+      const rows = data
+        .filter((item) => {
+          if (!item) return false;
+
+          if (item.city !== "香港") return false;
+
+          if (
+            item.source !== "香港天文台-今日预测"
+          ) {
+            return false;
+          }
+
+          if (item.forecast_date !== targetDate) {
+            return false;
+          }
+
+          const updateTime = String(
+            item.update_time
+            || item.data_update_time
+            || ""
+          );
+
+          // 只认香港天文台当天 07:45 正式版本。
+          return (
+            updateTime.includes("T07:45")
+            || updateTime.includes(" 07:45")
+          );
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.captured_at || 0).getTime()
+            - new Date(a.captured_at || 0).getTime()
+        );
+
+      const latest = rows[0] || null;
+
+      if (!latest) {
+        valueElement.textContent = "-";
+        dateElement.textContent = targetDate || "-";
+        updateElement.textContent = "未找到 07:45 版本";
+        capturedElement.textContent = "-";
+        gapElement.textContent = "暂无可比较数据";
+        gapElement.className =
+          "hko-morning-meta-value hko-morning-status-missing";
+        return;
+      }
+
+      const forecastValue = Number(latest.max_temp);
+
+      if (!Number.isFinite(forecastValue)) {
+        valueElement.textContent = "无明确数值";
+      } else {
+        valueElement.textContent =
+          formatTemp(forecastValue);
+      }
+
+      dateElement.textContent =
+        latest.forecast_date || "-";
+
+      updateElement.textContent =
+        compactDateTime(
+          latest.update_time
+          || latest.data_update_time
+        );
+
+      capturedElement.textContent =
+        compactDateTime(latest.captured_at);
+
+      const achievedValues = state.realtimeHistory
+        .filter((item) => {
+          return (
+            item
+            && item.city === "香港"
+            && item.local_date === targetDate
+            && item.today_max_temp !== null
+            && item.today_max_temp !== undefined
+            && item.today_max_temp !== ""
+          );
+        })
+        .map((item) => Number(item.today_max_temp))
+        .filter(Number.isFinite);
+
+      if (
+        !Number.isFinite(forecastValue)
+        || !achievedValues.length
+      ) {
+        gapElement.textContent = "暂无可比较数据";
+        gapElement.className =
+          "hko-morning-meta-value hko-morning-status-missing";
+        return;
+      }
+
+      const achievedMax = Math.max(...achievedValues);
+      const difference = Math.round(
+        (forecastValue - achievedMax) * 100
+      ) / 100;
+
+      if (difference > 0) {
+        gapElement.textContent =
+          `距离预测还差 ${difference.toFixed(1)}℃`;
+        gapElement.className =
+          "hko-morning-meta-value";
+      } else if (difference === 0) {
+        gapElement.textContent = "已达到早间预测";
+        gapElement.className =
+          "hko-morning-meta-value hko-morning-status-ok";
+      } else {
+        gapElement.textContent =
+          `已超过预测 ${Math.abs(difference).toFixed(1)}℃`;
+        gapElement.className =
+          "hko-morning-meta-value hko-morning-status-ok";
+      }
     }
 
     function renderAchievedMax(data) {
