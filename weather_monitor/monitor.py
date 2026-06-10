@@ -438,9 +438,9 @@ def export_weather_data(
     - Deduplicates on (city, source, forecast_date, captured_at, forecast_run_label)
     - Sorts by captured_at descending (real time, not string sort)
     - Keeps at most max_records entries
-    - Filters to currently enabled cities only
+    - Filters to Hong Kong records for the current Hong Kong local date
     """
-    enabled_city_names = {city.name for city in load_cities()}
+    today_hk = today_date_for_timezone(HKO_TIMEZONE)
 
     # Load existing JSON history
     existing: list[dict] = []
@@ -470,7 +470,9 @@ def export_weather_data(
     # Merge + dedup (newer records win on key collision)
     merged: dict[tuple, dict] = {}
     for item in existing + new_dicts:
-        if item.get("city") not in enabled_city_names:
+        if item.get("city") != "香港":
+            continue
+        if item.get("forecast_date") != today_hk:
             continue
         key = _record_key(item)
         merged[key] = item  # last-write-wins (new_dicts come after existing)
