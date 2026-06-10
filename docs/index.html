@@ -1170,7 +1170,7 @@
         achievedCard.innerHTML = `
           <div class="section-head">
             <h2>今日已实现最高温</h2>
-            <span class="hint">仅采用香港天文台正式观测，历史只显示升高节点</span>
+            <span class="hint">上午双源批次与下午香港天文台观测，历史只显示升高节点</span>
           </div>
 
           <div class="achieved-max-summary">
@@ -1445,10 +1445,18 @@
           && (!cityFilter.value || item.city === cityFilter.value)
           && (!sourceFilter.value || item.source === sourceFilter.value);
       }).sort((a, b) => new Date(b.fetched_at || b.captured_at) - new Date(a.fetched_at || a.captured_at));
-      const realtimeFiltered = state.realtimeHistory.filter((item) => {
-        return isHongKongRealtimeHistoryRecord(item)
+      const selectedRealtime = state.realtimeHistory.filter((item) => {
+        return isHongKongSameDateRealtimeRecord(item)
           && (!forecastDateFilter.value || item.local_date === forecastDateFilter.value);
       }).sort((a, b) => new Date(b.captured_at) - new Date(a.captured_at));
+
+      const morningDualRealtime = selectedRealtime.filter(
+        isHongKongMorningDualSourceRecord
+      );
+
+      const achievedMaxRealtime = selectedRealtime.filter(
+        isHongKongAchievedMaxRecord
+      );
 
       const openMeteoForecasts = filtered.filter((item) => {
         return item.source === "Open-Meteo";
@@ -1468,13 +1476,13 @@
           - new Date(a.captured_at || 0).getTime()
       );
 
-      renderStats(filtered, realtimeFiltered);
-      renderRealtimeTable(realtimeFiltered);
-      renderAchievedMax(realtimeFiltered);
+      renderStats(filtered, morningDualRealtime);
+      renderRealtimeTable(morningDualRealtime);
+      renderAchievedMax(achievedMaxRealtime);
       renderHkoMorningForecast(state.data);
       renderForecastTable(combinedForecasts);
       renderRecords(combinedForecasts);
-      renderBatchTable(realtimeFiltered);
+      renderBatchTable(morningDualRealtime);
       renderMarketTable();
       updateChartHints();
       renderCharts(filtered);
@@ -1717,12 +1725,8 @@
       const achievedValues = state.realtimeHistory
         .filter((item) => {
           return (
-            item
-            && item.city === "香港"
+            isHongKongAchievedMaxRecord(item)
             && item.local_date === targetDate
-            && item.today_max_temp !== null
-            && item.today_max_temp !== undefined
-            && item.today_max_temp !== ""
           );
         })
         .map((item) => Number(item.today_max_temp))
@@ -1834,21 +1838,19 @@
         }
       });
 
-      const latestRow = validRows[
-        validRows.length - 1
+      const latestChange = changes[
+        changes.length - 1
       ];
 
       const latestUpdate =
-        latestRow.max_temp_updated_at
-        || latestRow.hko_observed_at
-        || latestRow.observed_at
-        || latestRow.captured_at;
+        latestChange.updated_at
+        || latestChange.captured_at;
 
       valueElement.textContent = formatTemp(runningMax);
       updatedElement.textContent =
         compactDateTime(latestUpdate);
       batchElement.textContent =
-        compactDateTime(latestRow.captured_at);
+        compactDateTime(latestChange.captured_at);
 
       statusElement.textContent =
         changes.length <= 1
@@ -2417,12 +2419,47 @@
       return parts.hour >= 9 && parts.hour < 14;
     }
 
-    function isHongKongRealtimeHistoryRecord(record) {
+    function isHongKongSameDateRealtimeRecord(record) {
       if (!record || record.city !== "香港") return false;
       const parts = getHongKongDateParts(record.captured_at);
       if (!parts) return false;
       if (record.local_date !== parts.isoDate) return false;
-      return parts.hour >= 9 && parts.hour < 14;
+      return true;
+    }
+
+    function isHongKongMorningDualSourceRecord(record) {
+      if (!isHongKongSameDateRealtimeRecord(record)) return false;
+      const parts = getHongKongDateParts(record.captured_at);
+      const hasHko = record.hko_current_temp !== null
+        && record.hko_current_temp !== undefined
+        && record.hko_current_temp !== ""
+        && Number.isFinite(Number(record.hko_current_temp));
+      const hasOpenMeteo = record.open_meteo_current_temp !== null
+        && record.open_meteo_current_temp !== undefined
+        && record.open_meteo_current_temp !== ""
+        && Number.isFinite(Number(record.open_meteo_current_temp));
+      return parts.hour >= 9
+        && parts.hour < 14
+        && hasHko
+        && hasOpenMeteo;
+    }
+
+    function isHongKongAfternoonObservationRecord(record) {
+      return isHongKongSameDateRealtimeRecord(record)
+        && record.collection_window === "afternoon_1400_1700";
+    }
+
+    function isHongKongAchievedMaxRecord(record) {
+      if (
+        !isHongKongMorningDualSourceRecord(record)
+        && !isHongKongAfternoonObservationRecord(record)
+      ) {
+        return false;
+      }
+      return record.today_max_temp !== null
+        && record.today_max_temp !== undefined
+        && record.today_max_temp !== ""
+        && Number.isFinite(Number(record.today_max_temp));
     }
 
     function isHongKongForecastHistoryRecord(record) {

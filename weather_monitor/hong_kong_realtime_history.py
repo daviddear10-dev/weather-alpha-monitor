@@ -13,6 +13,8 @@ from .hong_kong_realtime import SettlementObservation
 HKO_TZ = ZoneInfo("Asia/Hong_Kong")
 OUTPUT_PATH = Path("docs/hong_kong_realtime_history.json")
 SOURCE = "Open-Meteo + 香港天文台-实时观测"
+AFTERNOON_SOURCE = "香港天文台-实时观测"
+AFTERNOON_COLLECTION_WINDOW = "afternoon_1400_1700"
 
 
 def save_realtime_observation(
@@ -57,24 +59,41 @@ def save_realtime_observation(
         "max_temp_updated_at": observation.max_temp_updated_at,
     }
 
-    rows = [
-        row
-        for row in _load_history(output_path)
-        if row.get("city") == "香港" and row.get("local_date") == local_date
-    ]
-    by_captured_at = {
-        str(row.get("captured_at")): row
-        for row in rows
-        if row.get("captured_at")
-    }
-    by_captured_at.setdefault(record["captured_at"], record)
+    _append_today_record(record, output_path, local_date)
+    return record
 
-    output_rows = sorted(
-        by_captured_at.values(),
-        key=lambda row: str(row.get("captured_at", "")),
-        reverse=True,
-    )
-    _atomic_write_json(output_path, output_rows)
+
+def save_afternoon_observation(
+    observation: SettlementObservation,
+    output_path: Path = OUTPUT_PATH,
+    captured_at: str | None = None,
+) -> dict[str, Any]:
+    now_hk = datetime.now(HKO_TZ)
+    local_date = now_hk.date().isoformat()
+    if observation.current_temp is None:
+        raise ValueError("香港天文台当前温度不能为空")
+    if observation.today_max_temp is None:
+        raise ValueError("香港天文台今日已录得最高温不能为空")
+
+    hko_current_temp = float(observation.current_temp)
+    record = {
+        "city": "香港",
+        "source": AFTERNOON_SOURCE,
+        "sources": ["香港天文台"],
+        "local_date": local_date,
+        "captured_at": captured_at or now_hk.isoformat(timespec="seconds"),
+        "hko_current_temp": hko_current_temp,
+        "open_meteo_current_temp": None,
+        "average_current_temp": None,
+        "current_temp": hko_current_temp,
+        "hko_observed_at": observation.observed_at,
+        "observed_at": observation.observed_at,
+        "today_max_temp": float(observation.today_max_temp),
+        "max_temp_updated_at": observation.max_temp_updated_at,
+        "collection_window": AFTERNOON_COLLECTION_WINDOW,
+    }
+
+    _append_today_record(record, output_path, local_date)
     return record
 
 
@@ -120,6 +139,31 @@ def _load_history(path: Path) -> list[dict[str, Any]]:
         raise RuntimeError(f"{path} 必须是 JSON 数组")
 
     return [item for item in payload if isinstance(item, dict)]
+
+
+def _append_today_record(
+    record: dict[str, Any],
+    output_path: Path,
+    local_date: str,
+) -> None:
+    rows = [
+        row
+        for row in _load_history(output_path)
+        if row.get("city") == "香港" and row.get("local_date") == local_date
+    ]
+    by_captured_at = {
+        str(row.get("captured_at")): row
+        for row in rows
+        if row.get("captured_at")
+    }
+    by_captured_at.setdefault(str(record["captured_at"]), record)
+
+    output_rows = sorted(
+        by_captured_at.values(),
+        key=lambda row: str(row.get("captured_at", "")),
+        reverse=True,
+    )
+    _atomic_write_json(output_path, output_rows)
 
 
 def _atomic_write_json(path: Path, payload: Any) -> None:
