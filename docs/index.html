@@ -425,18 +425,20 @@
     <section class="grid observation-grid">
       <article class="card section">
         <div class="section-head">
-          <h2>香港天文台实时观测</h2>
-          <span class="hint">当前温度与今日已录得最高温</span>
+          <h2>双源实时温度</h2>
+          <span class="hint">Open-Meteo 与香港天文台实时温度平均</span>
         </div>
         <div class="table-wrap">
           <table class="realtime-table">
             <thead>
               <tr>
                 <th>抓取时间</th>
-                <th>当前温度</th>
-                <th>今日已录得最高温</th>
-                <th>观测更新时间</th>
-                <th>数据源</th>
+                <th>Open-Meteo 实时温度</th>
+                <th>香港天文台实时温度</th>
+                <th>双源平均温度</th>
+                <th>香港天文台今日已录得最高温</th>
+                <th>Open-Meteo 数据时间</th>
+                <th>香港天文台数据时间</th>
               </tr>
             </thead>
             <tbody id="realtimeTable"></tbody>
@@ -703,16 +705,30 @@
     }
 
     function renderRealtimeTable(data) {
-      const rows = data.slice(0, 40).map((item) => `
-        <tr>
-          <td>${escapeHtml(item.captured_at)}</td>
-          <td>${formatTemp(item.current_temp)}</td>
-          <td>${formatTemp(item.today_max_temp)}</td>
-          <td>${escapeHtml(item.observed_at || item.max_temp_updated_at || "-")}</td>
-          <td>${escapeHtml(item.source || "香港天文台-实时观测")}</td>
-        </tr>
-      `);
-      document.querySelector("#realtimeTable").innerHTML = rows.join("") || `<tr><td colspan="5"><div class="empty">当前日期 09:00–13:59 暂无香港天文台实时观测。</div></td></tr>`;
+      const rows = data.slice(0, 40).map((item) => {
+        const openMeteoTemp = item.open_meteo_current_temp;
+        const hkoTemp = item.hko_current_temp;
+
+        // 兼容功能升级前的旧香港天文台单源记录。
+        const averageTemp = item.average_current_temp != null
+          ? item.average_current_temp
+          : item.current_temp;
+
+        return `
+          <tr>
+            <td>${escapeHtml(item.captured_at)}</td>
+            <td>${openMeteoTemp != null ? formatTemp(openMeteoTemp) : "-"}</td>
+            <td>${hkoTemp != null ? formatTemp(hkoTemp) : "-"}</td>
+            <td><strong>${averageTemp != null ? formatTemp(averageTemp) : "-"}</strong></td>
+            <td>${item.today_max_temp != null ? formatTemp(item.today_max_temp) : "-"}</td>
+            <td>${escapeHtml(item.open_meteo_observed_at || "-")}</td>
+            <td>${escapeHtml(item.hko_observed_at || item.observed_at || "-")}</td>
+          </tr>
+        `;
+      });
+
+      document.querySelector("#realtimeTable").innerHTML = rows.join("")
+        || `<tr><td colspan="7"><div class="empty">当前日期 09:00–13:59 暂无双源实时温度。</div></td></tr>`;
     }
 
     function renderForecastTable(data) {

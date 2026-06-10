@@ -10,7 +10,8 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from .hong_kong_realtime import fetch_hong_kong_realtime
+from .hong_kong_realtime import SettlementObservation
+from .hong_kong_realtime_history import load_latest_realtime_record
 from .hong_kong_probability import (
     HongKongProbabilityInput,
     TemperatureBucket,
@@ -39,13 +40,111 @@ def main() -> None:
     print(f"香港当地时间: {now_hk.isoformat(timespec='seconds')}")
     print()
 
-    # ── Step 1: real-time observation ──
-    obs = fetch_hong_kong_realtime(session=session)
-    if obs is None or obs.current_temp is None:
-        print("无法获取实时观测数据", file=sys.stderr)
+    # ── Step 1: reuse the same persisted dual-source observation ──
+    realtime_record = load_latest_realtime_record(local_date=today_str)
+    if realtime_record is None:
+        print(
+            "未找到香港今天的双源实时记录，请先运行实时抓取步骤",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
-    achieved_max = obs.today_max_temp or obs.current_temp
+    captured_at = str(realtime_record.get("captured_at") or "")
+    try:
+        captured_dt = datetime.fromisoformat(
+            captured_at.replace("Z", "+00:00")
+        )
+    except ValueError:
+        print(
+            f"双源实时记录 captured_at 无效：{captured_at}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    if captured_dt.tzinfo is None:
+        captured_dt = captured_dt.replace(tzinfo=HKO_TZ)
+
+    age_seconds = (
+        now_hk - captured_dt.astimezone(HKO_TZ)
+    ).total_seconds()
+
+    if age_seconds < -60 or age_seconds > 15 * 60:
+        print(
+            f"最新双源实时记录已过期：captured_at={captured_at}，"
+            f"距离当前约 {age_seconds / 60:.1f} 分钟",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    try:
+        hko_current_temp = float(
+            realtime_record["hko_current_temp"]
+        )
+        open_meteo_current_temp = float(
+            realtime_record["open_meteo_current_temp"]
+        )
+        average_current_temp = float(
+            realtime_record["average_current_temp"]
+        )
+        achieved_max = float(
+            realtime_record["today_max_temp"]
+        )
+    except (KeyError, TypeError, ValueError) as exc:
+        print(
+            f"双源实时记录字段无效：{exc}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    expected_average = round(
+        (hko_current_temp + open_meteo_current_temp) / 2.0,
+        2,
+    )
+    if abs(average_current_temp - expected_average) > 1e-9:
+        print(
+            "双源实时平均温度校验失败："
+            f"文件值={average_current_temp}℃，"
+            f"重新计算值={expected_average}℃",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    hko_observed_at = str(
+        realtime_record.get("hko_observed_at")
+        or realtime_record.get("observed_at")
+        or ""
+    )
+    open_meteo_observed_at = str(
+        realtime_record.get("open_meteo_observed_at")
+        or ""
+    )
+    max_temp_updated_at = str(
+        realtime_record.get("max_temp_updated_at")
+        or ""
+    )
+
+    model_observed_at = (
+        hko_observed_at
+        or open_meteo_observed_at
+        or captured_at
+    )
+
+    # 保留 SettlementObservation，兼容后面的 JSON 生成逻辑。
+    obs = SettlementObservation(
+        settlement_station="香港天文台",
+        current_temp=hko_current_temp,
+        today_max_temp=achieved_max,
+        observed_at=hko_observed_at,
+        max_temp_updated_at=max_temp_updated_at,
+        incomplete=False,
+    )
+
+    print(f"使用同一批次双源记录: {captured_at}")
+    print(f"香港天文台当前温度: {hko_current_temp}℃")
+    print(f"Open-Meteo 当前温度: {open_meteo_current_temp}℃")
+    print(f"双源平均实时温度: {average_current_temp}℃")
+    print(f"香港天文台今日已录得最高温: {achieved_max}℃")
+    print()
 
     market_bucket_source, market_buckets = _load_market_buckets(today_str)
     print(f"市场档位来源: {market_bucket_source}")
@@ -85,8 +184,8 @@ def main() -> None:
 
     # ── Step 3: run probability model ──
     inp = HongKongProbabilityInput(
-        observed_at=obs.observed_at or now_hk.isoformat(timespec="seconds"),
-        current_temp=obs.current_temp,
+        observed_at=model_observed_at,
+        current_temp=average_current_temp,
         achieved_max_temp=achieved_max,
         forecast_highs=forecast_highs,
         local_hour=local_hour,
@@ -112,7 +211,13 @@ def main() -> None:
         "local_date": today_str,
         "local_hour": round(local_hour, 2),
         "settlement_station": obs.settlement_station,
-        "current_temp": obs.current_temp,
+        # current_temp 代表双源平均实时温度。
+        "current_temp": average_current_temp,
+        "hko_current_temp": hko_current_temp,
+        "open_meteo_current_temp": open_meteo_current_temp,
+        "current_temp_sources": ["Open-Meteo", "香港天文台"],
+        "hko_observed_at": obs.observed_at,
+        "open_meteo_observed_at": open_meteo_observed_at,
         "today_max_temp": achieved_max,
         "achieved_bucket": bucket_for_temp(achieved_max, result.buckets),
         "observed_at": obs.observed_at,
