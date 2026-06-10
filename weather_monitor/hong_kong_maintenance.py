@@ -107,16 +107,67 @@ def main() -> None:
         step("18/18", "推送到远程仓库", push_with_retries)
         print("✓ 推送成功")
     except NoActiveMarket:
-        restore_files(backups)
+        weather_commit_files = {
+            "docs/weather_data.json",
+            "data/hong_kong_today_forecast_cache.json",
+        }
+
+        if options.dry_run:
+            restore_files(backups)
+            backups = {}
+            warn_restore_runtime_sqlite()
+            print("当前没有可用的香港 Polymarket 温度市场。")
+            print("可能原因：")
+            print("- 今日市场已经结束")
+            print("- 明日市场尚未上线")
+            print()
+            print("dry-run: 已恢复运行前的全部数据文件。")
+            print("本次无需提交或推送。")
+            print("✓ 维护任务正常结束")
+            return
+
+        restore_files({
+            path: content
+            for path, content in backups.items()
+            if str(path) not in weather_commit_files
+        })
         backups = {}
         warn_restore_runtime_sqlite()
+
         print("当前没有可用的香港 Polymarket 温度市场。")
         print("可能原因：")
         print("- 今日市场已经结束")
         print("- 明日市场尚未上线")
         print()
-        print("已保留原有正式市场和数据文件。")
-        print("本次无需提交或推送。")
+        print("已恢复原有市场和概率文件。")
+        print("本次抓取的天气数据将继续保留并提交。")
+
+        changed_weather = [
+            changed_path
+            for changed_path in get_changed_allowed_files()
+            if str(changed_path) in weather_commit_files
+        ]
+
+        if not changed_weather:
+            print("天气数据没有变化，本次无需提交或推送。")
+            print("✓ 维护任务正常结束")
+            return
+
+        print("本次将提交的天气文件列表:")
+        for changed_path in changed_weather:
+            print(f"- {changed_path}")
+
+        git_add_allowed(changed_weather)
+        commit_changes()
+
+        if options.no_push:
+            print("--no-push: 已提交天气更新，跳过推送")
+            print("✓ 维护任务正常结束")
+            return
+
+        run_git(["pull", "--rebase"], timeout=120)
+        push_with_retries()
+        print("✓ 天气数据推送成功")
         print("✓ 维护任务正常结束")
         return
     except Exception as exc:
