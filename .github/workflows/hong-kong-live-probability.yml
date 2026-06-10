@@ -19,10 +19,13 @@ permissions:
 jobs:
   capture:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -34,38 +37,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Capture Hong Kong live probability
-        run: python -m weather_monitor.capture_hong_kong_live_probability
-
-      - name: Commit probability if changed
+      - name: Configure Git
         run: |
-          JSON_FILE="docs/hong_kong_live_probability.json"
-
-          if [ ! -f "$JSON_FILE" ]; then
-            echo "Probability file does not exist, nothing to commit"
-            exit 0
-          fi
-
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add "$JSON_FILE"
-
-          if git diff --cached --quiet; then
-            echo "Probability file unchanged, nothing to commit"
-            exit 0
-          fi
-
-          git commit -m "Update Hong Kong live probability"
-
-          for attempt in 1 2 3; do
-            if git pull --rebase && git push; then
-              echo "Push succeeded on attempt $attempt"
-              exit 0
-            fi
-            echo "Push attempt $attempt failed, retrying in $((attempt * 5))s..."
-            sleep $((attempt * 5))
-          done
-
-          echo "Failed to push after 3 attempts"
-          exit 1
+      - name: Run Hong Kong maintenance flow
+        run: python -m weather_monitor.hong_kong_maintenance
