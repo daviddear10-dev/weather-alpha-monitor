@@ -1,5 +1,35 @@
 [
   {
+    "captured_at": "2026-06-10T10:51:29+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-11",
+    "min_temp": 24.0,
+    "max_temp": 26.8,
+    "update_time": "2026-06-10T10:51:29+08:00"
+  },
+  {
+    "captured_at": "2026-06-10T10:51:29+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-10",
+    "min_temp": 22.6,
+    "max_temp": 26.9,
+    "update_time": "2026-06-10T10:51:29+08:00"
+  },
+  {
+    "captured_at": "2026-06-10T10:51:29+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "香港天文台",
+    "forecast_date": "2026-06-11",
+    "min_temp": 24.0,
+    "max_temp": 29.0,
+    "update_time": "2026-06-10T05:50:00+08:00"
+  },
+  {
     "captured_at": "2026-06-10T10:08:31+08:00",
     "forecast_run_label": "manual",
     "city": "香港",
