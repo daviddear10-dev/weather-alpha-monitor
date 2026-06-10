@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -317,8 +318,11 @@ def _build_probability_rows(
     return rows
 
 
-def _fetch_open_meteo_today_max(session: requests.Session) -> float | None:
-    """Get Open-Meteo forecast max temp for TODAY in Hong Kong."""
+def _fetch_open_meteo_today_max(
+    session: requests.Session,
+    attempts: int = 3,
+) -> float | None:
+    """Get today's Open-Meteo maximum with retries and local fallback."""
     params = {
         "latitude": 22.3193,
         "longitude": 114.1694,
@@ -326,22 +330,155 @@ def _fetch_open_meteo_today_max(session: requests.Session) -> float | None:
         "timezone": "Asia/Hong_Kong",
         "forecast_days": 2,
     }
-    try:
-        r = session.get(OPEN_METEO_URL, params=params, timeout=20)
-        r.raise_for_status()
-        data = r.json()
-        daily = data.get("daily", {})
-        dates = daily.get("time", [])
-        max_temps = daily.get("temperature_2m_max", [])
-        today = datetime.now(HKO_TZ).strftime("%Y-%m-%d")
-        if today not in dates:
-            print(f"  Open-Meteo 返回日期 {dates} 不含今天 {today}")
-            return None
-        idx = dates.index(today)
-        return float(max_temps[idx])
-    except Exception as exc:
-        print(f"  Open-Meteo 错误: {exc}")
+    today = datetime.now(HKO_TZ).strftime("%Y-%m-%d")
+
+    for attempt in range(1, attempts + 1):
+        try:
+            response = session.get(
+                OPEN_METEO_URL,
+                params=params,
+                timeout=20,
+            )
+            response.raise_for_status()
+
+            payload = response.json()
+            daily = payload.get("daily", {})
+            dates = daily.get("time", [])
+            max_temps = daily.get(
+                "temperature_2m_max",
+                [],
+            )
+
+            if today not in dates:
+                raise ValueError(
+                    f"返回日期 {dates} 不含今天 {today}"
+                )
+
+            index = dates.index(today)
+
+            if index >= len(max_temps):
+                raise ValueError(
+                    "temperature_2m_max 数组长度不足"
+                )
+
+            value = float(max_temps[index])
+
+            if attempt > 1:
+                print(
+                    f"  Open-Meteo 第 {attempt} 次请求成功"
+                )
+
+            return value
+
+        except Exception as exc:
+            print(
+                f"  Open-Meteo 第 {attempt}/{attempts} "
+                f"次请求失败: {exc}"
+            )
+
+            if attempt < attempts:
+                delay_seconds = attempt * 2
+                print(
+                    f"  {delay_seconds} 秒后重试"
+                )
+                time.sleep(delay_seconds)
+
+    fallback = _load_latest_open_meteo_today_max(
+        today
+    )
+
+    if fallback is None:
+        print(
+            "  Open-Meteo 在线请求和本地预测回退均失败"
+        )
         return None
+
+    value, captured_at = fallback
+
+    print(
+        "  Open-Meteo 在线请求连续失败，"
+        "使用 weather_data.json 中本批最新预测"
+    )
+    print(f"  本地预测 captured_at: {captured_at}")
+    print(f"  本地预测 forecast_high: {value}℃")
+
+    return value
+
+
+def _load_latest_open_meteo_today_max(
+    today: str,
+    path: Path = Path("docs/weather_data.json"),
+) -> tuple[float, str] | None:
+    if not path.exists():
+        print(f"  本地预测文件不存在: {path}")
+        return None
+
+    try:
+        payload = json.loads(
+            path.read_text(encoding="utf-8")
+        )
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"  本地预测文件读取失败: {exc}")
+        return None
+
+    if not isinstance(payload, list):
+        print(f"  {path} 不是 JSON 数组")
+        return None
+
+    candidates: list[tuple[str, float]] = []
+
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+
+        if item.get("city") != "香港":
+            continue
+
+        if item.get("source") != "Open-Meteo":
+            continue
+
+        if item.get("forecast_date") != today:
+            continue
+
+        raw_value = item.get("max_temp")
+
+        if (
+            raw_value is None
+            or raw_value == ""
+        ):
+            continue
+
+        try:
+            value = float(raw_value)
+        except (TypeError, ValueError):
+            continue
+
+        captured_at = str(
+            item.get("captured_at")
+            or item.get("fetched_at")
+            or ""
+        )
+
+        if not captured_at:
+            continue
+
+        candidates.append(
+            (captured_at, value)
+        )
+
+    if not candidates:
+        print(
+            f"  {path} 中没有香港 {today} 的 "
+            "Open-Meteo 有效预测"
+        )
+        return None
+
+    captured_at, value = max(
+        candidates,
+        key=lambda row: row[0],
+    )
+
+    return value, captured_at
 
 
 def _fetch_hko_today_max_with_cache(
