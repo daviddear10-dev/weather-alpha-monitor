@@ -281,7 +281,7 @@
     }
 
     .batch-table {
-      min-width: 760px;
+      min-width: 1080px;
     }
 
     .realtime-table,
@@ -375,19 +375,19 @@
         <article class="card stat">
           <div class="label">记录数量</div>
           <div class="value" id="recordCount">0</div>
-          <div class="note">最近 100 条导出数据</div>
+          <div class="note">今日双源实时批次</div>
         </article>
       </div>
       <div class="grid stats" style="margin-top: 0;">
         <article class="card stat">
           <div class="label">数据源</div>
           <div class="value" id="sourceCount">0</div>
-          <div class="note">当前筛选范围</div>
+          <div class="note">实时温度来源</div>
         </article>
         <article class="card stat">
           <div class="label">多源校验</div>
           <div class="value" id="sourceCoverage">-</div>
-          <div class="note">香港数据源覆盖</div>
+          <div class="note">双源实时数据完整性</div>
         </article>
         <article class="card stat">
           <div class="label">目标日期</div>
@@ -537,19 +537,20 @@
 
     <section class="card section" style="margin-top: 16px;">
       <div class="section-head">
-        <h2>不同批次对比</h2>
-        <span class="hint">按批次和城市汇总平均温度</span>
+        <h2>双源实时批次对比</h2>
+        <span class="hint">每个抓取批次同时显示两个实时来源和平均值</span>
       </div>
       <div class="table-wrap">
         <table class="batch-table">
           <thead>
             <tr>
-              <th>批次</th>
+              <th>抓取时间</th>
               <th>城市</th>
-              <th>记录数</th>
-              <th>平均最低温</th>
-              <th>平均最高温</th>
-              <th>数据源</th>
+              <th>Open-Meteo 实时温度</th>
+              <th>香港天文台实时温度</th>
+              <th>双源平均温度</th>
+              <th>香港天文台今日最高温</th>
+              <th>数据完整性</th>
             </tr>
           </thead>
           <tbody id="batchTable"></tbody>
@@ -559,8 +560,8 @@
 
     <section class="card section" style="margin-top: 16px;">
       <div class="section-head">
-        <h2>最新记录</h2>
-        <span class="hint">按抓取时间倒序</span>
+        <h2>今日最高温预测记录</h2>
+        <span class="hint">以下是预测数据，不是实时温度观测</span>
       </div>
       <div class="table-wrap">
         <table>
@@ -673,35 +674,95 @@
         return isHongKongRealtimeHistoryRecord(item)
           && (!forecastDateFilter.value || item.local_date === forecastDateFilter.value);
       }).sort((a, b) => new Date(b.captured_at) - new Date(a.captured_at));
-      renderStats(filtered);
+      renderStats(filtered, realtimeFiltered);
       renderRealtimeTable(realtimeFiltered);
       renderForecastTable(filtered);
       renderRecords(filtered);
-      renderBatchTable(filtered);
+      renderBatchTable(realtimeFiltered);
       renderMarketTable();
       updateChartHints();
       renderCharts(filtered);
     }
 
-    function renderStats(data) {
-      const latest = data[0];
-      document.querySelector("#latestCaptured").textContent = latest ? compactDateTime(latest.captured_at) : "-";
-      document.querySelector("#latestBatch").textContent = latest ? `批次 ${latest.forecast_run_label}` : "批次 -";
-      document.querySelector("#weatherCityCount").textContent = unique(data.map((item) => item.city)).length;
-      document.querySelector("#liveMarketCount").textContent = state.markets.length;
-      document.querySelector("#recordCount").textContent = data.length;
-      document.querySelector("#sourceCount").textContent = unique(data.map((item) => item.source)).length;
-      document.querySelector("#targetDateStat").textContent = forecastDateFilter.value || "全部";
+    function renderStats(weatherData, realtimeData) {
+      const latestRealtime = realtimeData[0] || null;
+      const latestWeather = weatherData[0] || null;
 
-      const citySources = new Map();
-      data.forEach((item) => {
-        const sources = citySources.get(item.city) || new Set();
-        sources.add(item.source);
-        citySources.set(item.city, sources);
-      });
-      const multiSourceCities = Array.from(citySources.values()).filter((s) => s.size >= 2).length;
-      const totalCities = citySources.size;
-      document.querySelector("#sourceCoverage").textContent = `${multiSourceCities} / ${totalCities}`;
+      const latestCandidates = [
+        latestRealtime
+          ? {
+              type: "realtime",
+              capturedAt: latestRealtime.captured_at,
+              value: latestRealtime
+            }
+          : null,
+        latestWeather
+          ? {
+              type: "forecast",
+              capturedAt: latestWeather.captured_at,
+              value: latestWeather
+            }
+          : null
+      ]
+        .filter(Boolean)
+        .sort(
+          (a, b) =>
+            new Date(b.capturedAt).getTime()
+            - new Date(a.capturedAt).getTime()
+        );
+
+      const latest = latestCandidates[0] || null;
+
+      document.querySelector("#latestCaptured").textContent =
+        latest ? compactDateTime(latest.capturedAt) : "-";
+
+      document.querySelector("#latestBatch").textContent =
+        latest
+          ? latest.type === "realtime"
+            ? "双源实时批次"
+            : `批次 ${latest.value.forecast_run_label || "-"}`
+          : "批次 -";
+
+      const cities = unique([
+        ...weatherData.map((item) => item.city),
+        ...realtimeData.map((item) => item.city)
+      ].filter(Boolean));
+
+      document.querySelector("#weatherCityCount").textContent =
+        cities.length;
+
+      document.querySelector("#liveMarketCount").textContent =
+        state.markets.length;
+
+      document.querySelector("#recordCount").textContent =
+        realtimeData.length;
+
+      let realtimeSourceCount = 0;
+
+      if (
+        latestRealtime
+        && latestRealtime.open_meteo_current_temp !== null
+        && latestRealtime.open_meteo_current_temp !== undefined
+      ) {
+        realtimeSourceCount += 1;
+      }
+
+      if (
+        latestRealtime
+        && latestRealtime.hko_current_temp !== null
+        && latestRealtime.hko_current_temp !== undefined
+      ) {
+        realtimeSourceCount += 1;
+      }
+
+      document.querySelector("#sourceCount").textContent =
+        realtimeSourceCount;
+
+      document.querySelector("#sourceCoverage").textContent =
+        `${realtimeSourceCount} / 2`;
+
+      document.querySelector("#targetDateStat").textContent =
+        forecastDateFilter.value || "全部";
     }
 
     function renderRealtimeTable(data) {
@@ -760,57 +821,67 @@
     }
 
     function renderBatchTable(data) {
-      const groups = new Map();
-      data.forEach((item) => {
-        const key = `${item.forecast_run_label}__${item.city}`;
-        const existing = groups.get(key) || {
-          label: item.forecast_run_label,
-          city: item.city,
-          count: 0,
-          minTemps: [],
-          maxTemps: [],
-          sources: new Set()
-        };
+      const rows = data.slice(0, 50).map((item) => {
+        const hasOpenMeteo =
+          item.open_meteo_current_temp !== null
+          && item.open_meteo_current_temp !== undefined
+          && item.open_meteo_current_temp !== "";
 
-        existing.count += 1;
+        const hasHko =
+          item.hko_current_temp !== null
+          && item.hko_current_temp !== undefined
+          && item.hko_current_temp !== "";
 
-        if (
-          item.min_temp !== null
-          && item.min_temp !== undefined
-          && item.min_temp !== ""
-        ) {
-          const minTemp = Number(item.min_temp);
-          if (Number.isFinite(minTemp)) {
-            existing.minTemps.push(minTemp);
-          }
-        }
+        const openMeteoTemp = hasOpenMeteo
+          ? item.open_meteo_current_temp
+          : null;
 
-        if (
-          item.max_temp !== null
-          && item.max_temp !== undefined
-          && item.max_temp !== ""
-        ) {
-          const maxTemp = Number(item.max_temp);
-          if (Number.isFinite(maxTemp)) {
-            existing.maxTemps.push(maxTemp);
-          }
-        }
+        // 兼容升级前只有香港天文台单源温度的旧记录。
+        const legacyHkoTemp =
+          !hasOpenMeteo
+          && !hasHko
+          && item.current_temp !== null
+          && item.current_temp !== undefined
+            ? item.current_temp
+            : null;
 
-        existing.sources.add(item.source);
-        groups.set(key, existing);
+        const hkoTemp = hasHko
+          ? item.hko_current_temp
+          : legacyHkoTemp;
+
+        const averageTemp =
+          item.average_current_temp !== null
+          && item.average_current_temp !== undefined
+            ? item.average_current_temp
+            : hasOpenMeteo && hasHko
+              ? item.current_temp
+              : null;
+
+        const sourceCount =
+          (hasOpenMeteo ? 1 : 0)
+          + (hkoTemp !== null ? 1 : 0);
+
+        const completeness =
+          sourceCount === 2
+            ? '<span class="tag yes">2 / 2 完整</span>'
+            : `<span class="tag neutral">${sourceCount} / 2 不完整</span>`;
+
+        return `
+          <tr>
+            <td>${escapeHtml(item.captured_at || "-")}</td>
+            <td>${escapeHtml(item.city || "香港")}</td>
+            <td>${openMeteoTemp !== null ? formatTemp(openMeteoTemp) : "-"}</td>
+            <td>${hkoTemp !== null ? formatTemp(hkoTemp) : "-"}</td>
+            <td class="max-temp">${averageTemp !== null ? formatTemp(averageTemp) : "-"}</td>
+            <td>${item.today_max_temp != null ? formatTemp(item.today_max_temp) : "-"}</td>
+            <td>${completeness}</td>
+          </tr>
+        `;
       });
 
-      const rows = Array.from(groups.values()).map((group) => `
-        <tr>
-          <td><span class="tag">${escapeHtml(group.label)}</span></td>
-          <td>${escapeHtml(group.city)}</td>
-          <td>${group.count}</td>
-          <td>${formatTemp(avg(group.minTemps))}</td>
-          <td class="max-temp">${formatTemp(avg(group.maxTemps))}</td>
-          <td><div class="source-list">${escapeHtml(Array.from(group.sources).join("、"))}</div></td>
-        </tr>
-      `);
-      document.querySelector("#batchTable").innerHTML = rows.join("") || `<tr><td colspan="6"><div class="empty">当前筛选没有批次数据。</div></td></tr>`;
+      document.querySelector("#batchTable").innerHTML =
+        rows.join("")
+        || `<tr><td colspan="7"><div class="empty">当前日期暂无双源实时批次。</div></td></tr>`;
     }
 
     function renderHKProbabilityCard() {
