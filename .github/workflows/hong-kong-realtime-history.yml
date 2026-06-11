@@ -1,0 +1,86 @@
+name: Hong Kong Realtime History
+
+on:
+  workflow_dispatch:
+  schedule:
+    # HKT 09:05-13:45, every 20 minutes = UTC 01:05-05:45
+    - cron: "5,25,45 1-5 * * *"
+    # HKT 13:55 = UTC 05:55
+    - cron: "55 5 * * *"
+
+concurrency:
+  group: repository-data-writer-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Sync latest main
+        run: |
+          git fetch origin
+          git reset --hard origin/main
+
+      - name: Capture Hong Kong realtime history
+        run: python -m weather_monitor.capture_hong_kong_realtime_history
+
+      - name: Commit and push realtime history if changed
+        run: |
+          DATA_FILE="docs/hong_kong_realtime_history.json"
+
+          if [ ! -f "$DATA_FILE" ]; then
+            echo "Realtime history file does not exist, nothing to commit"
+            exit 0
+          fi
+
+          git add -- "$DATA_FILE"
+
+          if git diff --cached --quiet; then
+            echo "Realtime history unchanged, nothing to commit"
+            exit 0
+          fi
+
+          git commit -m "Update Hong Kong realtime history"
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Push succeeded on attempt $attempt"
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              delay=$((attempt * 5))
+              echo "Push attempt $attempt failed; syncing origin/main before retry in ${delay}s"
+              sleep "$delay"
+              git fetch origin
+              git rebase origin/main
+            fi
+          done
+
+          echo "Failed to push after 3 attempts"
+          exit 1
