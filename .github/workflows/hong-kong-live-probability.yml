@@ -9,6 +9,7 @@ on:
 concurrency:
   group: repository-data-writer-${{ github.ref }}
   cancel-in-progress: false
+  queue: max
 
 permissions:
   contents: write
