@@ -1,43 +1,43 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-15T14:32:33+08:00",
-  "local_date": "2026-06-15",
-  "local_hour": 14.53,
+  "captured_at": "2026-06-16T13:55:34+08:00",
+  "local_date": "2026-06-16",
+  "local_hour": 13.92,
   "settlement_station": "香港天文台",
-  "current_temp": 26.65,
-  "hko_current_temp": 25.0,
-  "open_meteo_current_temp": 28.3,
+  "current_temp": 26.05,
+  "hko_current_temp": 26.0,
+  "open_meteo_current_temp": 26.1,
   "current_temp_sources": [
     "Open-Meteo",
     "香港天文台"
   ],
-  "hko_observed_at": "2026-06-15T14:00:00+08:00",
-  "open_meteo_observed_at": "2026-06-15T14:30:00+08:00",
-  "today_max_temp": 29.9,
-  "achieved_bucket": "30°C",
-  "observed_at": "2026-06-15T14:00:00+08:00",
-  "max_temp_updated_at": "2026-06-15T14:20:00+08:00",
+  "hko_observed_at": "2026-06-16T13:00:00+08:00",
+  "open_meteo_observed_at": "2026-06-16T13:45:00+08:00",
+  "today_max_temp": 27.1,
+  "achieved_bucket": "27°C",
+  "observed_at": "2026-06-16T13:00:00+08:00",
+  "max_temp_updated_at": "2026-06-16T13:40:00+08:00",
   "forecast_sources": [
     {
       "source": "Open-Meteo",
-      "forecast_high": 28.3
+      "forecast_high": 26.8
     },
     {
       "source": "香港天文台 Local Weather Forecast",
-      "forecast_high": 29.0,
+      "forecast_high": 28.0,
       "from_cache": true,
-      "cache_captured_at": "2026-06-15T07:54:35+08:00",
-      "hko_update_time": "2026-06-15T07:45:00+08:00"
+      "cache_captured_at": "2026-06-16T08:19:06+08:00",
+      "hko_update_time": "2026-06-16T07:45:00+08:00"
     }
   ],
   "model_parameters": {
-    "forecast_mean": 28.65,
-    "source_spread": 0.7,
-    "model_center": 30.05,
-    "sigma": 0.795,
-    "no_new_high_probability": 0.95,
-    "remaining_upside_probability": 0.05
+    "forecast_mean": 27.4,
+    "source_spread": 1.2,
+    "model_center": 27.32,
+    "sigma": 1.12,
+    "no_new_high_probability": 0.43,
+    "remaining_upside_probability": 0.57
   },
   "probabilities": [
     {
@@ -68,43 +68,43 @@
       "bucket": "27°C",
       "condition": "=",
       "threshold": 27.0,
-      "probability": 0.0
+      "probability": 0.569341
     },
     {
       "bucket": "28°C",
       "condition": "=",
       "threshold": 28.0,
-      "probability": 0.0
+      "probability": 0.286032
     },
     {
       "bucket": "29°C",
       "condition": "=",
       "threshold": 29.0,
-      "probability": 0.0
+      "probability": 0.118988
     },
     {
       "bucket": "30°C",
       "condition": "=",
       "threshold": 30.0,
-      "probability": 0.975151
+      "probability": 0.023384
     },
     {
       "bucket": "31°C",
       "condition": "=",
       "threshold": 31.0,
-      "probability": 0.021885
+      "probability": 0.00216
     },
     {
       "bucket": "32°C",
       "condition": "=",
       "threshold": 32.0,
-      "probability": 0.002875
+      "probability": 9.3e-05
     },
     {
       "bucket": "33°C or higher",
       "condition": ">=",
       "threshold": 33.0,
-      "probability": 8.9e-05
+      "probability": 2e-06
     }
   ],
   "probability_sum": 1.0,
