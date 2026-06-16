@@ -2,9 +2,6 @@ name: Hong Kong Live Probability
 
 on:
   workflow_dispatch:
-  schedule:
-    # HKT 09:00-13:40, every 20 minutes = UTC 01:00-05:40
-    - cron: "0,20,40 1-5 * * *"
 
 concurrency:
   group: repository-data-writer-${{ github.ref }}
