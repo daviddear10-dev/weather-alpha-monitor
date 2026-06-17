@@ -1,9 +1,9 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-17T12:45:29+08:00",
+  "captured_at": "2026-06-17T13:00:29+08:00",
   "local_date": "2026-06-17",
-  "local_hour": 12.75,
+  "local_hour": 13.0,
   "settlement_station": "香港天文台",
   "current_temp": 26.35,
   "hko_current_temp": 28.0,
@@ -13,11 +13,11 @@
     "香港天文台"
   ],
   "hko_observed_at": "2026-06-17T12:00:00+08:00",
-  "open_meteo_observed_at": "2026-06-17T12:45:00+08:00",
-  "today_max_temp": 28.3,
+  "open_meteo_observed_at": "2026-06-17T13:00:00+08:00",
+  "today_max_temp": 28.4,
   "achieved_bucket": "28°C",
   "observed_at": "2026-06-17T12:00:00+08:00",
-  "max_temp_updated_at": "2026-06-17T12:30:00+08:00",
+  "max_temp_updated_at": "2026-06-17T12:50:00+08:00",
   "forecast_sources": [
     {
       "source": "Open-Meteo",
@@ -34,10 +34,10 @@
   "model_parameters": {
     "forecast_mean": 27.45,
     "source_spread": 1.1,
-    "model_center": 28.45,
+    "model_center": 28.55,
     "sigma": 1.085,
-    "no_new_high_probability": 0.58,
-    "remaining_upside_probability": 0.42
+    "no_new_high_probability": 0.65,
+    "remaining_upside_probability": 0.35
   },
   "probabilities": [
     {
@@ -74,37 +74,37 @@
       "bucket": "28°C",
       "condition": "=",
       "threshold": 28.0,
-      "probability": 0.635513
+      "probability": 0.673082
     },
     {
       "bucket": "29°C",
       "condition": "=",
       "threshold": 29.0,
-      "probability": 0.238415
+      "probability": 0.206696
     },
     {
       "bucket": "30°C",
       "condition": "=",
       "threshold": 30.0,
-      "probability": 0.103807
+      "probability": 0.097424
     },
     {
       "bucket": "31°C",
       "condition": "=",
       "threshold": 31.0,
-      "probability": 0.020396
+      "probability": 0.020732
     },
     {
       "bucket": "32°C",
       "condition": "=",
       "threshold": 32.0,
-      "probability": 0.001797
+      "probability": 0.00198
     },
     {
       "bucket": "33°C or higher",
       "condition": ">=",
       "threshold": 33.0,
-      "probability": 7.2e-05
+      "probability": 8.6e-05
     }
   ],
   "probability_sum": 1.0,
