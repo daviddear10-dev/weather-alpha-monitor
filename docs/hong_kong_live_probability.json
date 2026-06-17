@@ -1,19 +1,19 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-17T13:40:26+08:00",
+  "captured_at": "2026-06-17T13:45:34+08:00",
   "local_date": "2026-06-17",
-  "local_hour": 13.67,
+  "local_hour": 13.75,
   "settlement_station": "香港天文台",
-  "current_temp": 26.4,
+  "current_temp": 26.45,
   "hko_current_temp": 28.0,
-  "open_meteo_current_temp": 24.8,
+  "open_meteo_current_temp": 24.9,
   "current_temp_sources": [
     "Open-Meteo",
     "香港天文台"
   ],
   "hko_observed_at": "2026-06-17T13:00:00+08:00",
-  "open_meteo_observed_at": "2026-06-17T13:30:00+08:00",
+  "open_meteo_observed_at": "2026-06-17T13:45:00+08:00",
   "today_max_temp": 28.4,
   "achieved_bucket": "28°C",
   "observed_at": "2026-06-17T13:00:00+08:00",
@@ -36,8 +36,8 @@
     "source_spread": 1.1,
     "model_center": 28.55,
     "sigma": 1.085,
-    "no_new_high_probability": 0.65,
-    "remaining_upside_probability": 0.35
+    "no_new_high_probability": 0.58,
+    "remaining_upside_probability": 0.42
   },
   "probabilities": [
     {
@@ -74,37 +74,37 @@
       "bucket": "28°C",
       "condition": "=",
       "threshold": 28.0,
-      "probability": 0.673082
+      "probability": 0.607698
     },
     {
       "bucket": "29°C",
       "condition": "=",
       "threshold": 29.0,
-      "probability": 0.206696
+      "probability": 0.248035
     },
     {
       "bucket": "30°C",
       "condition": "=",
       "threshold": 30.0,
-      "probability": 0.097424
+      "probability": 0.116909
     },
     {
       "bucket": "31°C",
       "condition": "=",
       "threshold": 31.0,
-      "probability": 0.020732
+      "probability": 0.024879
     },
     {
       "bucket": "32°C",
       "condition": "=",
       "threshold": 32.0,
-      "probability": 0.00198
+      "probability": 0.002376
     },
     {
       "bucket": "33°C or higher",
       "condition": ">=",
       "threshold": 33.0,
-      "probability": 8.6e-05
+      "probability": 0.000103
     }
   ],
   "probability_sum": 1.0,
