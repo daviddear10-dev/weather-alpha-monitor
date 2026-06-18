@@ -11,9 +11,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-16T04:22:54.462208Z",
     "end_date": "2026-06-18T12:00:00Z",
-    "volume": 44612.08539700002,
-    "volume24hr": 43216.62289499999,
-    "liquidity": 25475.79447,
+    "volume": 44821.33539700002,
+    "volume24hr": 43425.87289499999,
+    "liquidity": 25643.35497,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -36,9 +36,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-16T04:23:16.870992Z",
     "end_date": "2026-06-18T12:00:00Z",
-    "volume": 29391.50230500003,
-    "volume24hr": 28152.647477,
-    "liquidity": 14087.85987,
+    "volume": 29595.19230500003,
+    "volume24hr": 28356.337476999997,
+    "liquidity": 14505.78157,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -61,9 +61,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-16T04:23:16.605854Z",
     "end_date": "2026-06-18T12:00:00Z",
-    "volume": 20077.37282300001,
-    "volume24hr": 18575.249392,
-    "liquidity": 1086.9188,
+    "volume": 21735.550546000013,
+    "volume24hr": 20227.707114999997,
+    "liquidity": 1544.6209,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -72,7 +72,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-18-2026",
     "metric": "max_temp",
     "threshold": 28.0,
-    "yes_price": 0.345
+    "yes_price": 0.24
   },
   {
     "city": "香港",
@@ -86,9 +86,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-16T04:22:46.5171Z",
     "end_date": "2026-06-18T12:00:00Z",
-    "volume": 22926.321387000015,
-    "volume24hr": 17518.069115,
-    "liquidity": 3542.4994,
+    "volume": 23220.346140000016,
+    "volume24hr": 17769.137995999998,
+    "liquidity": 4339.6508,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -97,7 +97,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-18-2026",
     "metric": "max_temp",
     "threshold": 30.0,
-    "yes_price": 0.175
+    "yes_price": 0.135
   },
   {
     "city": "香港",
@@ -111,9 +111,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-16T04:23:19.461787Z",
     "end_date": "2026-06-18T12:00:00Z",
-    "volume": 20259.63298099999,
-    "volume24hr": 16384.562351,
-    "liquidity": 1025.037,
+    "volume": 20668.70298099999,
+    "volume24hr": 16793.632351,
+    "liquidity": 1058.5705,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -122,7 +122,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-18-2026",
     "metric": "max_temp",
     "threshold": 29.0,
-    "yes_price": 0.475
+    "yes_price": 0.61
   },
   {
     "city": "香港",
@@ -137,8 +137,8 @@
     "start_date": "2026-06-16T04:22:51.380122Z",
     "end_date": "2026-06-18T12:00:00Z",
     "volume": 15708.156048,
-    "volume24hr": 13506.361175000004,
-    "liquidity": 1606.34974,
+    "volume24hr": 13364.551175000002,
+    "liquidity": 1808.13902,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -147,7 +147,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-18-2026",
     "metric": "max_temp",
     "threshold": 32.0,
-    "yes_price": 0.0015
+    "yes_price": 0.001
   },
   {
     "city": "香港",
@@ -161,9 +161,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-16T04:22:48.523596Z",
     "end_date": "2026-06-18T12:00:00Z",
-    "volume": 14668.803741,
-    "volume24hr": 12828.253191999996,
-    "liquidity": 5729.59779,
+    "volume": 15047.969563999999,
+    "volume24hr": 13137.928640999999,
+    "liquidity": 6130.28105,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -172,7 +172,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-18-2026",
     "metric": "max_temp",
     "threshold": 31.0,
-    "yes_price": 0.027
+    "yes_price": 0.019
   },
   {
     "city": "香港",
@@ -186,9 +186,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-16T04:23:00.520444Z",
     "end_date": "2026-06-18T12:00:00Z",
-    "volume": 7203.168402999999,
-    "volume24hr": 6299.613004999998,
-    "liquidity": 2491.85822,
+    "volume": 7308.598402999999,
+    "volume24hr": 6289.005004999998,
+    "liquidity": 2307.6053,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -197,7 +197,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-18-2026",
     "metric": "max_temp",
     "threshold": 33.0,
-    "yes_price": 0.0015
+    "yes_price": 0.001
   },
   {
     "city": "香港",
@@ -213,7 +213,7 @@
     "end_date": "2026-06-18T12:00:00Z",
     "volume": 5387.972494000004,
     "volume24hr": 3673.4840200000003,
-    "liquidity": 1936.3594,
+    "liquidity": 2241.08254,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -222,7 +222,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-18-2026",
     "metric": "max_temp",
     "threshold": 34.0,
-    "yes_price": 0.001
+    "yes_price": 0.0005
   },
   {
     "city": "香港",
@@ -238,7 +238,7 @@
     "end_date": "2026-06-18T12:00:00Z",
     "volume": 2811.0041510000005,
     "volume24hr": 1956.001485,
-    "liquidity": 18050.92365,
+    "liquidity": 18167.77365,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -263,7 +263,7 @@
     "end_date": "2026-06-18T12:00:00Z",
     "volume": 1387.808,
     "volume24hr": 1104.0,
-    "liquidity": 17574.8972,
+    "liquidity": 17691.1472,
     "active": true,
     "closed": false,
     "accepting_orders": true,
