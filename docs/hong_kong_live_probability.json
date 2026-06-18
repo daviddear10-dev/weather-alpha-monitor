@@ -1,22 +1,22 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-18T11:00:28+08:00",
+  "captured_at": "2026-06-18T11:05:35+08:00",
   "local_date": "2026-06-18",
-  "local_hour": 11.0,
+  "local_hour": 11.08,
   "settlement_station": "香港天文台",
-  "current_temp": 26.7,
-  "hko_current_temp": 28.0,
+  "current_temp": 27.2,
+  "hko_current_temp": 29.0,
   "open_meteo_current_temp": 25.4,
   "current_temp_sources": [
     "Open-Meteo",
     "香港天文台"
   ],
-  "hko_observed_at": "2026-06-18T10:00:00+08:00",
+  "hko_observed_at": "2026-06-18T11:00:00+08:00",
   "open_meteo_observed_at": "2026-06-18T11:00:00+08:00",
   "today_max_temp": 28.7,
   "achieved_bucket": "29°C",
-  "observed_at": "2026-06-18T10:00:00+08:00",
+  "observed_at": "2026-06-18T11:00:00+08:00",
   "max_temp_updated_at": "2026-06-18T10:50:00+08:00",
   "forecast_sources": [
     {
@@ -36,8 +36,8 @@
     "source_spread": 1.6,
     "model_center": 28.85,
     "sigma": 1.46,
-    "no_new_high_probability": 0.45,
-    "remaining_upside_probability": 0.55
+    "no_new_high_probability": 0.38,
+    "remaining_upside_probability": 0.62
   },
   "probabilities": [
     {
@@ -74,37 +74,37 @@
       "bucket": "29°C",
       "condition": "=",
       "threshold": 29.0,
-      "probability": 0.666404
+      "probability": 0.623946
     },
     {
       "bucket": "30°C",
       "condition": "=",
       "threshold": 30.0,
-      "probability": 0.202217
+      "probability": 0.227953
     },
     {
       "bucket": "31°C",
       "condition": "=",
       "threshold": 31.0,
-      "probability": 0.096039
+      "probability": 0.108262
     },
     {
       "bucket": "32°C",
       "condition": "=",
       "threshold": 32.0,
-      "probability": 0.029026
+      "probability": 0.032721
     },
     {
       "bucket": "33°C",
       "condition": "=",
       "threshold": 33.0,
-      "probability": 0.005578
+      "probability": 0.006288
     },
     {
       "bucket": "34°C or higher",
       "condition": ">=",
       "threshold": 34.0,
-      "probability": 0.000736
+      "probability": 0.00083
     }
   ],
   "probability_sum": 1.0,
