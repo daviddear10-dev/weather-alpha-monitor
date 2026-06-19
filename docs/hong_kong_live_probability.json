@@ -1,9 +1,9 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-19T13:25:35+08:00",
+  "captured_at": "2026-06-19T13:40:17+08:00",
   "local_date": "2026-06-19",
-  "local_hour": 13.42,
+  "local_hour": 13.67,
   "settlement_station": "香港天文台",
   "current_temp": 30.2,
   "hko_current_temp": 31.0,
@@ -13,11 +13,11 @@
     "香港天文台"
   ],
   "hko_observed_at": "2026-06-19T13:00:00+08:00",
-  "open_meteo_observed_at": "2026-06-19T13:15:00+08:00",
+  "open_meteo_observed_at": "2026-06-19T13:30:00+08:00",
   "today_max_temp": 31.1,
   "achieved_bucket": "31°C",
   "observed_at": "2026-06-19T13:00:00+08:00",
-  "max_temp_updated_at": "2026-06-19T13:10:00+08:00",
+  "max_temp_updated_at": "2026-06-19T13:30:00+08:00",
   "forecast_sources": [
     {
       "source": "Open-Meteo",
