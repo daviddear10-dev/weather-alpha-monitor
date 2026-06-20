@@ -1,5 +1,15 @@
 [
   {
+    "captured_at": "2026-06-20T10:25:31+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "Open-Meteo",
+    "forecast_date": "2026-06-20",
+    "min_temp": 27.1,
+    "max_temp": 29.7,
+    "update_time": "2026-06-20T10:25:31+08:00"
+  },
+  {
     "captured_at": "2026-06-20T10:20:11+08:00",
     "forecast_run_label": "manual",
     "city": "香港",
