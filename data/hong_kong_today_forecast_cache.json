@@ -1,9 +1,9 @@
 {
-  "forecast_date": "2026-06-20",
+  "forecast_date": "2026-06-21",
   "source": "香港天文台 Local Weather Forecast",
-  "forecast_high": 32.0,
-  "captured_at": "2026-06-20T07:53:09+08:00",
-  "update_time": "2026-06-20T07:45:00+08:00",
+  "forecast_high": 33.0,
+  "captured_at": "2026-06-21T07:52:47+08:00",
+  "update_time": "2026-06-21T07:45:00+08:00",
   "forecast_period": "本港地区今日天气预测",
-  "forecast_desc": "大致多云，初时有几阵骤雨。日间部分时间有阳光及炎热，市区最高气温约32度，新界再高一两度。吹和缓至清劲偏南风，初时高地间中吹强风。"
+  "forecast_desc": "大致天晴，但早上局部地区有骤雨，日间酷热，最高气温约33度。吹和缓南至西南风。"
 }
