@@ -1,5 +1,20 @@
 [
   {
+    "captured_at": "2026-06-22T09:20:19+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "香港天文台",
+    "forecast_date": "2026-06-22",
+    "min_temp": null,
+    "max_temp": 33.0,
+    "update_time": "2026-06-22T08:45:00+08:00",
+    "status": "ok",
+    "status_text": "正常",
+    "forecast_period": "本港地区今日天气预测",
+    "forecast_desc": "大致天晴。日间酷热，市区最高气温约33度，新界再高一两度。吹和缓南至西南风。",
+    "error": ""
+  },
+  {
     "captured_at": "2026-06-22T09:05:31+08:00",
     "forecast_run_label": "manual",
     "city": "香港",
