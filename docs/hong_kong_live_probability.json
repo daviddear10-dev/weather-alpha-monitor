@@ -1,9 +1,9 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-22T13:20:17+08:00",
+  "captured_at": "2026-06-22T13:25:34+08:00",
   "local_date": "2026-06-22",
-  "local_hour": 13.33,
+  "local_hour": 13.42,
   "settlement_station": "香港天文台",
   "current_temp": 31.3,
   "hko_current_temp": 32.0,
