@@ -1,23 +1,23 @@
 {
   "city": "香港",
   "model_version": "hk-max-v1-heuristic",
-  "captured_at": "2026-06-22T13:05:38+08:00",
+  "captured_at": "2026-06-22T13:20:17+08:00",
   "local_date": "2026-06-22",
-  "local_hour": 13.08,
+  "local_hour": 13.33,
   "settlement_station": "香港天文台",
-  "current_temp": 31.35,
+  "current_temp": 31.3,
   "hko_current_temp": 32.0,
-  "open_meteo_current_temp": 30.7,
+  "open_meteo_current_temp": 30.6,
   "current_temp_sources": [
     "Open-Meteo",
     "香港天文台"
   ],
   "hko_observed_at": "2026-06-22T13:00:00+08:00",
-  "open_meteo_observed_at": "2026-06-22T13:00:00+08:00",
-  "today_max_temp": 31.9,
+  "open_meteo_observed_at": "2026-06-22T13:15:00+08:00",
+  "today_max_temp": 32.0,
   "achieved_bucket": "32°C",
   "observed_at": "2026-06-22T13:00:00+08:00",
-  "max_temp_updated_at": "2026-06-22T12:50:00+08:00",
+  "max_temp_updated_at": "2026-06-22T13:10:00+08:00",
   "forecast_sources": [
     {
       "source": "Open-Meteo",
@@ -34,7 +34,7 @@
   "model_parameters": {
     "forecast_mean": 31.9,
     "source_spread": 2.2,
-    "model_center": 32.05,
+    "model_center": 32.15,
     "sigma": 1.47,
     "no_new_high_probability": 0.5,
     "remaining_upside_probability": 0.5
@@ -80,31 +80,31 @@
       "bucket": "32°C",
       "condition": "=",
       "threshold": 32.0,
-      "probability": 0.648789
+      "probability": 0.624606
     },
     {
       "bucket": "33°C",
       "condition": "=",
       "threshold": 33.0,
-      "probability": 0.201416
+      "probability": 0.209651
     },
     {
       "bucket": "34°C",
       "condition": "=",
       "threshold": 34.0,
-      "probability": 0.105597
+      "probability": 0.114923
     },
     {
       "bucket": "35°C",
       "condition": "=",
       "threshold": 35.0,
-      "probability": 0.035445
+      "probability": 0.040336
     },
     {
       "bucket": "36°C or higher",
       "condition": ">=",
       "threshold": 36.0,
-      "probability": 0.008753
+      "probability": 0.010484
     }
   ],
   "probability_sum": 1.0,
