@@ -1,172 +1,22 @@
 [
   {
-    "captured_at": "2026-06-24T13:55:29+08:00",
+    "captured_at": "2026-06-25T09:05:26+08:00",
     "forecast_run_label": "manual",
     "city": "香港",
     "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T13:55:29+08:00"
+    "forecast_date": "2026-06-25",
+    "min_temp": 25.6,
+    "max_temp": 31.8,
+    "update_time": "2026-06-25T09:05:26+08:00"
   },
   {
-    "captured_at": "2026-06-24T13:45:27+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T13:45:27+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T13:25:34+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T13:25:34+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T13:05:36+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T13:05:36+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T12:45:32+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T12:45:32+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T12:25:29+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T12:25:29+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T12:05:33+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T12:05:33+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T11:45:35+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T11:45:35+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T11:25:27+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T11:25:27+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T11:05:30+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T11:05:30+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T10:45:28+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T10:45:28+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T10:25:24+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T10:25:24+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T10:05:39+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T10:05:39+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T09:45:28+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T09:45:28+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T09:25:32+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T09:25:32+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T09:05:27+08:00",
-    "forecast_run_label": "manual",
-    "city": "香港",
-    "source": "Open-Meteo",
-    "forecast_date": "2026-06-24",
-    "min_temp": 27.5,
-    "max_temp": 31.3,
-    "update_time": "2026-06-24T09:05:27+08:00"
-  },
-  {
-    "captured_at": "2026-06-24T07:42:43+08:00",
+    "captured_at": "2026-06-25T07:52:25+08:00",
     "forecast_run_label": "manual",
     "city": "香港",
     "source": "香港天文台-今日预测",
-    "forecast_date": "2026-06-24",
+    "forecast_date": "2026-06-25",
     "min_temp": null,
     "max_temp": 33.0,
-    "update_time": "2026-06-24T06:45:00+08:00"
+    "update_time": "2026-06-25T07:45:00+08:00"
   }
 ]
