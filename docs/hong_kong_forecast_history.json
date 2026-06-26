@@ -1,5 +1,20 @@
 [
   {
+    "captured_at": "2026-06-26T09:25:34+08:00",
+    "forecast_run_label": "manual",
+    "city": "香港",
+    "source": "香港天文台",
+    "forecast_date": "2026-06-26",
+    "min_temp": null,
+    "max_temp": 32.0,
+    "update_time": "2026-06-26T08:45:00+08:00",
+    "status": "ok",
+    "status_text": "正常",
+    "forecast_period": "本港地区今日天气预测",
+    "forecast_desc": "大致多云，有几阵骤雨及狂风雷暴，部分地区雨势较大。早上短暂时间有阳光。日间最高气温约32度。吹轻微至和缓西南风。",
+    "error": ""
+  },
+  {
     "captured_at": "2026-06-26T09:05:31+08:00",
     "forecast_run_label": "manual",
     "city": "香港",
