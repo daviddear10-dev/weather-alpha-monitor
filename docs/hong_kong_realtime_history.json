@@ -7,6 +7,25 @@
       "香港天文台"
     ],
     "local_date": "2026-06-30",
+    "captured_at": "2026-06-30T16:48:32+08:00",
+    "hko_current_temp": 31.0,
+    "open_meteo_current_temp": 28.5,
+    "average_current_temp": 29.75,
+    "current_temp": 29.75,
+    "hko_observed_at": "2026-06-30T16:00:00+08:00",
+    "open_meteo_observed_at": "2026-06-30T16:45:00+08:00",
+    "observed_at": "2026-06-30T16:00:00+08:00",
+    "today_max_temp": 32.1,
+    "max_temp_updated_at": "2026-06-30T16:40:00+08:00"
+  },
+  {
+    "city": "香港",
+    "source": "Open-Meteo + 香港天文台-实时观测",
+    "sources": [
+      "Open-Meteo",
+      "香港天文台"
+    ],
+    "local_date": "2026-06-30",
     "captured_at": "2026-06-30T16:39:32+08:00",
     "hko_current_temp": 31.0,
     "open_meteo_current_temp": 28.5,
