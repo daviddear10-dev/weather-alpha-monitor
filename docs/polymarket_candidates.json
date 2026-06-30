@@ -11,9 +11,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 33823.72373799997,
-    "volume24hr": 32449.865448,
-    "liquidity": 13169.38511,
+    "volume": 35467.414767999966,
+    "volume24hr": 34093.556478,
+    "liquidity": 11478.87484,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -36,9 +36,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 21417.055424999988,
-    "volume24hr": 17100.483000000004,
-    "liquidity": 1073.5007,
+    "volume": 22713.45903299999,
+    "volume24hr": 18387.856305999998,
+    "liquidity": 634.4879,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -47,7 +47,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-30-2026",
     "metric": "max_temp",
     "threshold": 31.0,
-    "yes_price": 0.365
+    "yes_price": 0.415
   },
   {
     "city": "香港",
@@ -61,9 +61,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 20738.533916000004,
-    "volume24hr": 15133.851239999996,
-    "liquidity": 927.6868,
+    "volume": 21173.40095500001,
+    "volume24hr": 15568.718278999999,
+    "liquidity": 777.8842,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -72,7 +72,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-30-2026",
     "metric": "max_temp",
     "threshold": 32.0,
-    "yes_price": 0.545
+    "yes_price": 0.51
   },
   {
     "city": "香港",
@@ -86,9 +86,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 14939.813320000003,
-    "volume24hr": 12639.728838,
-    "liquidity": 3146.24241,
+    "volume": 15643.866977000001,
+    "volume24hr": 13338.782495000001,
+    "liquidity": 3255.38754,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -97,7 +97,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-30-2026",
     "metric": "max_temp",
     "threshold": 33.0,
-    "yes_price": 0.078
+    "yes_price": 0.0645
   },
   {
     "city": "香港",
@@ -111,9 +111,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 13937.966839999995,
-    "volume24hr": 12232.215530000003,
-    "liquidity": 10198.64375,
+    "volume": 14093.316839999996,
+    "volume24hr": 12387.565530000003,
+    "liquidity": 10067.96445,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -138,7 +138,7 @@
     "end_date": "2026-06-30T12:00:00Z",
     "volume": 12228.654911000003,
     "volume24hr": 11658.275578000002,
-    "liquidity": 16602.8901,
+    "liquidity": 16577.5701,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -161,9 +161,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 7640.870447000001,
-    "volume24hr": 6867.132849999999,
-    "liquidity": 2387.90719,
+    "volume": 7961.722186000002,
+    "volume24hr": 7187.984588999999,
+    "liquidity": 2077.12564,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -172,7 +172,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-30-2026",
     "metric": "max_temp",
     "threshold": 34.0,
-    "yes_price": 0.0105
+    "yes_price": 0.0135
   },
   {
     "city": "香港",
@@ -188,7 +188,7 @@
     "end_date": "2026-06-30T12:00:00Z",
     "volume": 6415.329133,
     "volume24hr": 5933.901133,
-    "liquidity": 6604.82963,
+    "liquidity": 6590.12963,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -211,9 +211,9 @@
     "condition_reason": "未发现 or below/or above 等方向短语，按精确温度市场处理",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 4884.586247,
-    "volume24hr": 4483.161246999999,
-    "liquidity": 1866.1519,
+    "volume": 4987.186247000001,
+    "volume24hr": 4585.761246999999,
+    "liquidity": 1717.06435,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -222,7 +222,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-30-2026",
     "metric": "max_temp",
     "threshold": 35.0,
-    "yes_price": 0.0035
+    "yes_price": 0.004
   },
   {
     "city": "香港",
@@ -236,9 +236,9 @@
     "condition_reason": "包含短语 \"or higher\"",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 4336.812904,
-    "volume24hr": 3997.683903999999,
-    "liquidity": 2225.4911,
+    "volume": 4439.412904000001,
+    "volume24hr": 4100.283903999999,
+    "liquidity": 2165.55496,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -247,7 +247,7 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-30-2026",
     "metric": "max_temp",
     "threshold": 36.0,
-    "yes_price": 0.0025
+    "yes_price": 0.003
   },
   {
     "city": "香港",
@@ -261,9 +261,9 @@
     "condition_reason": "包含短语 \"or below\"",
     "start_date": "2026-06-28T04:02:44Z",
     "end_date": "2026-06-30T12:00:00Z",
-    "volume": 3751.1639999999993,
-    "volume24hr": 2779.328,
-    "liquidity": 2915.80021,
+    "volume": 3845.763999999999,
+    "volume24hr": 2873.928,
+    "liquidity": 2794.29763,
     "active": true,
     "closed": false,
     "accepting_orders": true,
@@ -272,6 +272,6 @@
     "url": "https://polymarket.com/event/highest-temperature-in-hong-kong-on-june-30-2026",
     "metric": "max_temp",
     "threshold": 26.0,
-    "yes_price": 0.0015
+    "yes_price": 0.002
   }
 ]
