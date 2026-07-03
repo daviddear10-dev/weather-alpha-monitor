@@ -2,11 +2,7 @@ name: Hong Kong Realtime History
 
 on:
   workflow_dispatch:
-  schedule:
-    # HKT 09:05-13:45, every 20 minutes = UTC 01:05-05:45
-    - cron: "5,25,45 1-5 * * *"
-    # HKT 13:55 = UTC 05:55
-    - cron: "55 5 * * *"
+  # Automatic schedule temporarily disabled; run manually with workflow_dispatch.
 
 concurrency:
   group: repository-data-writer-${{ github.ref }}

@@ -2,11 +2,7 @@ name: Hong Kong Afternoon Observation
 
 on:
   workflow_dispatch:
-  schedule:
-    # HKT 14:00-16:40, every 20 minutes = UTC 06:00-08:40
-    - cron: "0,20,40 6-8 * * *"
-    # HKT 17:00 = UTC 09:00
-    - cron: "0 9 * * *"
+  # Automatic schedule temporarily disabled; run manually with workflow_dispatch.
 
 concurrency:
   group: repository-data-writer-${{ github.ref }}

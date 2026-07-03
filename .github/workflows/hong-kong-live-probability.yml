@@ -2,6 +2,7 @@ name: Hong Kong Live Probability
 
 on:
   workflow_dispatch:
+  # Automatic schedule temporarily disabled; run manually with workflow_dispatch.
 
 concurrency:
   group: repository-data-writer-${{ github.ref }}
