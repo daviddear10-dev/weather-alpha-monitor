@@ -1,9 +1,9 @@
 {
-  "forecast_date": "2026-09-15",
+  "forecast_date": "2026-09-16",
   "source": "香港天文台 Local Weather Forecast",
-  "forecast_high": 32.0,
-  "captured_at": "2026-09-15T08:57:50+08:00",
-  "update_time": "2026-09-15T08:45:00+08:00",
+  "forecast_high": 31.0,
+  "captured_at": "2026-09-16T08:50:16+08:00",
+  "update_time": "2026-09-16T08:45:00+08:00",
   "forecast_period": "本港地区今日天气预测",
-  "forecast_desc": "大致多云，有几阵骤雨，初时局部地区有雷暴。日间部分时间有阳光，最高气温约32度。吹微风，渐转吹和缓偏东风。"
+  "forecast_desc": "初时部分时间多云，局部地区有骤雨。日间渐转天晴，最高气温约31度。吹和缓偏东风，风势间中清劲。"
 }
