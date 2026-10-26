@@ -1,9 +1,9 @@
 {
-  "forecast_date": "2026-10-25",
+  "forecast_date": "2026-10-26",
   "source": "香港天文台 Local Weather Forecast",
-  "forecast_high": 31.0,
-  "captured_at": "2026-10-25T08:34:03+08:00",
-  "update_time": "2026-10-25T07:45:00+08:00",
+  "forecast_high": 30.0,
+  "captured_at": "2026-10-26T08:44:47+08:00",
+  "update_time": "2026-10-26T07:45:00+08:00",
   "forecast_period": "本港地区今日天气预测",
-  "forecast_desc": "天晴干燥。日间最高气温约31度。吹和缓北至东北风。"
+  "forecast_desc": "大致天晴。日间市区最高气温约30度，新界再高一两度。吹和缓东至东北风。"
 }
