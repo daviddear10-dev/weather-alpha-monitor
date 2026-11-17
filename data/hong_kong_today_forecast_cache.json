@@ -1,9 +1,9 @@
 {
-  "forecast_date": "2026-11-01",
+  "forecast_date": "2026-11-17",
   "source": "香港天文台 Local Weather Forecast",
-  "forecast_high": 29.0,
-  "captured_at": "2026-11-01T09:30:13+08:00",
-  "update_time": "2026-11-01T08:45:00+08:00",
-  "forecast_period": "本港地区今日天气预测",
-  "forecast_desc": "初时有一两阵微雨，日间部分时间有阳光，最高气温约29度。吹和缓偏东风，初时离岸风势间中清劲。"
+  "forecast_high": 27.0,
+  "captured_at": "2026-11-17T16:31:17+08:00",
+  "update_time": "2026-11-17T16:15:00+08:00",
+  "forecast_period": "本港地区今晚及明日天气预测",
+  "forecast_desc": "晚间渐转多云。明早气温约24度，日间短暂时间有阳光，最高气温约27度。吹和缓偏东风，明日稍后北风增强及有一两阵雨。明晚市区气温下降至最低约21度，新界再低两三度。"
 }
